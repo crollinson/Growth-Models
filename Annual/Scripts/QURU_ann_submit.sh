@@ -1,5 +1,5 @@
 #!/bin/sh
-#$ -wd ~/CARCA/Growth-Models/Annual/
+#$ -wd ~/CARCA/Growth-Models/Annual/Scripts/
 #$ -j y
 #$ -S /bin/bash
 #$ -V
@@ -7,5 +7,5 @@
 #$ -M crollinson@gmail.com
 #$ -l h_rt=24:00:00
 #$ -N QURU_Ann
-#cd ~/CARCA/Growth-Models/Annual/
+#cd ~/CARCA/Growth-Models/Annual/Scripts/
 R CMD BATCH QURU_Full_AnnClim.R
