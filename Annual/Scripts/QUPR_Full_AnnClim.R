@@ -9,9 +9,9 @@
 ####################################################
 rm(list=ls())
 
-#data_directory <- "~/Desktop/Personal/Penn State/Research/PhD Research/CARCA/Growth Models/Versions run at Cary/Rollinson"
+data_directory <- "~/CARCA/Growth-Models/Annual/"
 #memory.size(4024)
-#setwd(data_directory)
+setwd(data_directory)
 library(likelihood)
 
 # run.label <- "QUPR_Full_Ann"
@@ -19,66 +19,36 @@ library(likelihood)
 
 run.label <- "QUPR_Full_Ann"
 
-# # #############
-# # Reading in Test Data & some formating
-# all.data <-read.csv("CARCA_CoreData_Tree_Plot_Tavg_Precip_WideFormat.csv")
-# all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
-# all.data$BA.tree.cm2 <- all.data$BA.tree/100
-# all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
-# all.data$flow.acc <- ifelse(all.data$flow.acc>25, 25, all.data$flow.acc)
-# summary(all.data)
-# dim(all.data)
-
-# #############
-# # Subsetting just QUPR data
-# qupr.all <- all.data[all.data$Spp=="QUPR", ]
-# summary(qupr.all)
-# dim(qupr.all)
-
-# # Subsetting only complete cases & a small range of years
-# qupr.run <- qupr.all[complete.cases(qupr.all) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
-# summary(qupr.run)
-# dim(qupr.run)
-
-# write.csv(qupr.run, "QUPR_AllSites_1990-2011.csv", row.names=F)
+#############
+# Reading in Test Data & some formating
+all.data <-read.csv("../Raw Inputs/CARCA_CoreData_Climate_Annual.csv")
+all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
+all.data$BA.tree.cm2 <- all.data$BA.tree/100
+all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
+summary(all.data)
+dim(all.data)
 
 #############
+# Subsetting just QUPR data
+qupr.all <- all.data[all.data$Spp=="QUPR", ]
+summary(qupr.all)
+dim(qupr.all)
+
+# Subsetting only complete cases & a small range of years
+qupr.run <- qupr.all[complete.cases(qupr.all) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
+summary(qupr.run)
+dim(qupr.run)
+
+write.csv(qupr.run, "Inputs/QUPR_AllSites_1990-2011.csv", row.names=F)
+
+################################################
 # Reading in Data
-qupr.run <- read.csv("QUPR_AllSites_1990-2011.csv")
+qupr.run <- read.csv("Inputs/QUPR_AllSites_1990-2011.csv")
 summary(qupr.run)
 
 # Loading previous runs
 #load(file="Test results for QUPR 4 - All Sites 1990-2011.Rdata")
 
-#############
-# Vector with names of Months of the year
-months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
-
-# Selecting which previous and current year months to include in model
-months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
-months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
-months.use <- c(months.prev, months.curr)
-
-# seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X10")
-# seasons
- 
-months.use <- c(months[1:12]) # current March through October
-length(months.use)
-
-# Making vectors with the column names of the temp & precip months of interest
-temp.col <- paste("Tavg", months.use, sep=".")
-precip.col <- paste("Precip", months.use, sep=".")
-
-# Column numbers of temp & precip months of interest
-temp.col.ind <- which(names(qupr.run) %in% c(temp.col))
-precip.col.ind <- which(names(qupr.run) %in% c(precip.col))
-summary(qupr.run[,temp.col.ind])
-length(temp.col.ind)
-
-qupr.run$Tavg.yr <- rowMeans(qupr.run[,temp.col.ind])
-qupr.run$precip.yr <- rowSums(qupr.run[,precip.col.ind])
-summary(qupr.run$precip.yr)
-summary(qupr.run$Tavg.yr)
 ####################################################################################################################
 overall.model <- function(
 							SIZE,aa,ab, gmax,             # Autogenic (a) -- ABSOLUTE UNITS (from gmax)
@@ -148,18 +118,18 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=1, ab=0.00066, gmax=4668,  	# Autogenic
-          ca=551, cb=2.5, cc=5.0, cd=0.9, ce=0.01, cf=188, cg=-4.7,  # Competition
-          ta1=324.6, tb1=48,
-          pa1=1000, pb1=1000, pc1=0.004,
+		  aa=0.93, ab=0.0002, gmax=10000,  	# Autogenic
+          ca=9.6, cb=379, cc=2.74, cd=4.3, ce=175, cf=1513, cg=12.6,  # Competition
+          ta1=314.5, tb1=39.2,
+          pa1=1133, pb1=438, pc1=0.16,
           # # ha=rep(0.5,3),  # Habitat
-          sd=409.3)
+          sd=262)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
             BA.PLOT="BA.m2ha.plot.live", RS="RelBA",  # Competition
-            TEMP = "Tavg.yr", # hard-coded above
-            PRECIP = "precip.yr", FLOW="flow.acc"
+            TEMP = "Tavg", # hard-coded above
+            PRECIP = "Precip.PRISM.sum", FLOW="flow"
             # TRANS="Site.Trans" # Habitat
             )
 
@@ -177,7 +147,7 @@ par_lo <-list(
 
 par_hi <-list(
 			  aa=1, ab=1000, gmax=10000, # Autogenic
-              ca=2000, cb=1000, cc=5, cd=5, ce=1000, cf=5000, cg=1000,	# Competition
+              ca=2000, cb=1000, cc=5, cd=5, ce=1000, cf=2000, cg=1000,	# Competition
               # # ca=1000, cb=1000, cc=50, cd=5, cf=500, cg=1000,	# Competition
               ta1=325, tb1=500,
               pa1=5000, pb1=10000, pc1=1,
@@ -199,11 +169,11 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian = F, slimit=1.92, max_iter=50000)
+results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
 
-save(results,file=paste( run.label, "_Results.Rdata", sep=""))
+save(results,file=file.path("Outputs", paste(run.label, "_Results.Rdata", sep="")))
 
-write_results(results,paste( run.label, "_Results.txt", sep=""))
+write_results(results,file.path("Outputs", paste(run.label, "_Results.txt", sep="")))
 
 ## display some of the results in the console
 results$best_pars;
@@ -214,7 +184,7 @@ results$R2
 
 ####################################################################################################################
 ####################################################################################################################
-load(file=paste( run.label, "_Results.Rdata", sep=""))
+load(file=file.path("Outputs", paste(run.label, "_Results.Rdata", sep="")))
 
 
 # Looking at Residuals and Parameters
@@ -243,7 +213,7 @@ par(mar=c(5,5,4,2), mfrow=c(1,1))
 x <- seq(0,max(ceiling(results$source_data$BA.tree.cm2)),1)
 y <- autogenic.effect(x,results$best_pars$aa,results$best_pars$ab)
 
-pdf( paste(run.label, " - Autogenic Scalar.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Autogenic Scalar.pdf", sep="")))
 plot(x,y,ylim=c(0,1),xlab="Tree Basal Area (cm2)",ylab="Effect of Size on Growth",
      cex.axis=1.25,cex.lab=1.5,type="l",lwd=2,main=run.label)
 dev.off()
@@ -265,7 +235,7 @@ x <- seq(0,1,0.01)
 y <- size.effect(x,results$best_pars$ca, results$best_pars$cb,results$best_pars$cc)
 summary(y)
 
-pdf( paste(run.label, " - Competition Size Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Size Effect.pdf", sep="")))
 plot(x,y,xlab="Relative Size",ylab="Size Effect",type="l",lwd=2,
       cex.lab=1.5,cex.axis=1.25,main=run.label)
 #savePlot(file=paste("Competition Plot 1 ",run.label,".png",sep=""),type="png")
@@ -280,7 +250,7 @@ x <- seq(0,60,0.1)
 y <- comp.effect(x, results$best_pars$ce, results$best_pars$cf,results$best_pars$cg)
 summary(y)
 
-pdf( paste(run.label, " - Competition Competitive Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Competitive Effect.pdf", sep="")))
 plot(x,y,ylim=c(0,1),xlab="Plot BA",ylab="Competitive Effect",type="l",lwd=2,
        cex.lab=1.5,cex.axis=1.25,main=run.label)
 dev.off()
@@ -291,7 +261,7 @@ dev.off()
 plot(BA.m2ha.plot~ RelBA, data=results$source_data)
 
 
-pdf( paste(run.label, " - Competition Response Scalar.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Response Scalar.pdf", sep="")))
 par(mar=c(5,5,4,2))
 colors <- c("red","orange","blue","cyan","green")
 x <- seq(0,1,0.01)
@@ -348,7 +318,7 @@ summary(rowMeans(qupr.run[,temp.col]))
 x.temp <- seq(250, 300, length.out=100)
 y.temp <- temp.effect(x.temp, results$best_pars$ta1, results$best_pars$tb1)
 
-pdf( paste(run.label, " - Climate Temperature Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Climate Temperature Effect.pdf", sep="")))
 par(mfrow=c(1,1))
 plot(x.temp, y.temp, type="l", lwd=2,ylim=c(0,1), xlab="Tavg (K)", ylab="Temp Effect")
 		abline(v=min(rowMeans(qupr.run[,temp.col])), col="red")
@@ -378,7 +348,7 @@ plot(qupr.run$BAI ~ rowSums(qupr.run[,precip.col]), xlab="Total Precip Mar-Oct",
 x.precip <- seq(0, 2500, length.out=100)
 y.precip <- precip.effect(x.precip, results$best_pars$pa1, results$best_pars$pb1)
 
-pdf( paste(run.label, " - Climate Precipitation Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Climate Precipitation Effect.pdf", sep="")))
 plot(x.precip, y.precip, type="l", lwd=2, xlab="Precip (mm)", ylab="precip Effect", ylim=c(0,1))
 		abline(v=min(rowSums(qupr.run[,precip.col])), col="red")
 		abline(v=max(rowSums(qupr.run[,precip.col])), col="red")
@@ -427,7 +397,7 @@ summary(climate.effect3)
 climate.effect4 <- climate.effect(TEMP=x.temp, PRECIP=2000, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
 summary(climate.effect3)
 
-pdf( paste(run.label, " - Climate Response Temperature.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Climate Response Temperature.pdf", sep="")))
 par(mar=c(5,5,4,1))
 	plot(x.temp,climate.effect1,ylim=c(0,1), xlab="Tavg (K)",ylab="BAI",type="l",lwd=3, col="red", cex.axis=1.25, cex.lab=1.5, cex.main=2, font.lab=2, main="Climate Effect")
 
