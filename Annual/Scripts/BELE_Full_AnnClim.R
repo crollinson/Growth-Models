@@ -118,10 +118,10 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=0.99, ab=73.5, gmax=5000,  	# Autogenic
-          ca=2.16, cb=15.3, cc=3.6, cd=2, ce=800, cf=32, cg=-700,  # Competition
-          ta1=305, tb1=11.2,
-          pa1=4144, pb1=3445, pc1=0.95,
+		  aa=0.085, ab=894, gmax=7300,  	# Autogenic
+          ca=2.7, cb=5.6, cc=3.1, cd=4.5, ce=957, cf=32.7, cg=-345,  # Competition
+          ta1=312, tb1=14.7,
+          pa1=1839, pb1=6000, pc1=1,
           # # ha=rep(0.5,3),  # Habitat
           sd=112)
 
