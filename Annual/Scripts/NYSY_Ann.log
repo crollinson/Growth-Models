@@ -1,0 +1,761 @@
+
+R version 2.15.3 (2013-03-01) -- "Security Blanket"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ####################################################
+> # NYSY MODEL Autogenic x Competition x (Temp x Precip) :
+> # Autogenic: Size/Age logistic scalar with Max potential growth for absolute values
+> # Competition: Relative Size, Plot BA Scalars
+> # Climate: Jan-Dec
+> #	-- Temp: Mean Jan-Dec, Gaussian
+> #	-- Precip: Sum Jan-Dec + upslope flow, Gaussian
+> #
+> ####################################################
+> rm(list=ls())
+> 
+> data_directory <- "~/CARCA/Growth-Models/Annual/"
+> #memory.size(4024)
+> setwd(data_directory)
+> library(likelihood)
+Loading required package: nlme
+> 
+> # run.label <- "NYSY_Full_Ann"
+> # load(file=paste( run.label, "_Results.Rdata", sep=""))
+> 
+> run.label <- "NYSY_Full_Ann"
+> 
+> #############
+> # Reading in Test Data & some formating
+> all.data <-read.csv("../Raw Inputs/CARCA_CoreData_Climate_Annual.csv")
+> all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
+> all.data$BA.tree.cm2 <- all.data$BA.tree/100
+> all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
+> summary(all.data)
+      Year          PlotID        Site       Trans           Plot      
+ Min.   :1771   HNKC2  :  8505   BLD:62694   A: 88452   Min.   :1.000  
+ 1st Qu.:1831   FLTA1  :  7776   FLT:49329   B: 93798   1st Qu.:1.000  
+ Median :1892   HIKA1  :  7290   HIK:48357   C:106434   Median :2.000  
+ Mean   :1892   HNKB2  :  7290   HNK:43983              Mean   :2.265  
+ 3rd Qu.:1953   HNKA3  :  7047   IRN:52245              3rd Qu.:3.000  
+ Max.   :2013   BLDA2  :  6804   MOR:32076              Max.   :4.000  
+                (Other):243972                                         
+     TreeID            BAI                 CoreID       Pith      
+ BLDA101:   243   Min.   :    0.00   BLDA101HI:   243   N:211896  
+ BLDA102:   243   1st Qu.:   84.36   BLDA102HI:   243   Y: 76788  
+ BLDA103:   243   Median :  244.79   BLDA103HI:   243             
+ BLDA104:   243   Mean   :  459.83   BLDA104HI:   243             
+ BLDA105:   243   3rd Qu.:  589.69   BLDA105HI:   243             
+ BLDA106:   243   Max.   :18648.71   BLDA106HI:   243             
+ (Other):287226   NA's   :202009     (Other)  :287226             
+    Pith.Yr          Inner          Outer      Bark       Use       
+ Min.   :1756    Min.   :1762   Min.   :1990   N:  6318   N:  4617  
+ 1st Qu.:1917    1st Qu.:1923   1st Qu.:2012   Y:282366   Y:284067  
+ Median :1933    Median :1938   Median :2012                        
+ Mean   :1936    Mean   :1939   Mean   :2012                        
+ 3rd Qu.:1953    3rd Qu.:1955   3rd Qu.:2012                        
+ Max.   :2008    Max.   :2009   Max.   :2013                        
+ NA's   :60021                                                      
+                        Notes         Pith.offset         Tree      
+ poor corr w/ master       :   972   Min.   : 0.00   Min.   : 1.00  
+ poor correlation w/ master:   972   1st Qu.: 1.00   1st Qu.:10.00  
+ 1977 missing              :   486   Median : 2.00   Median :18.50  
+ 1986 missing              :   486   Mean   : 3.35   Mean   :20.86  
+ 1999 missing              :   486   3rd Qu.: 5.00   3rd Qu.:30.00  
+ (Other)                   : 14094   Max.   :20.00   Max.   :84.00  
+ NA's                      :271188   NA's   :60021                  
+      Spp              Genus         Canopy         Live       
+ ACRU   :71199   Quercus  :111294   C   :148230   DEAD:   243  
+ QUPR   :50787   Acer     : 85779   D   :  8748   LIVE:288441  
+ QURU   :43740   Nyssa    : 38880   I   : 86022                
+ NYSY   :38880   Magnolia : 11421   U   : 45441                
+ ACSA   :14580   Betula   :  8262   NA's:   243                
+ MAAC   : 9720   Sassafras:  7776                              
+ (Other):59778   (Other)  : 25272                              
+      Age            BA.m2ha          BAI.filled          BA.tree      
+ Min.   :  0.00   Min.   : 0.0000   Min.   :    0.00   Min.   :     0  
+ 1st Qu.: 19.00   1st Qu.: 0.0000   1st Qu.:    0.00   1st Qu.:     0  
+ Median : 40.00   Median : 0.0000   Median :    0.00   Median :     0  
+ Mean   : 44.55   Mean   : 0.1771   Mean   :  149.04   Mean   :  6106  
+ 3rd Qu.: 64.00   3rd Qu.: 0.0615   3rd Qu.:   74.84   3rd Qu.:  2007  
+ Max.   :256.00   Max.   :11.8597   Max.   :18648.71   Max.   :462177  
+ NA's   :195231   NA's   :1047      NA's   :985        NA's   :1047    
+     Stems          Density.Ha     BAI.filled.plot      BA.plot       
+ Min.   :0.0000   Min.   : 0.000   Min.   :    0.0   Min.   :    0.0  
+ 1st Qu.:0.0000   1st Qu.: 0.000   1st Qu.:    0.0   1st Qu.:    0.0  
+ Median :0.0000   Median : 0.000   Median :  904.8   Median :  581.2  
+ Mean   :0.3191   Mean   : 9.728   Mean   : 3899.5   Mean   : 2063.0  
+ 3rd Qu.:1.0000   3rd Qu.:31.831   3rd Qu.: 6247.5   3rd Qu.: 2866.9  
+ Max.   :1.0000   Max.   :49.736   Max.   :38677.4   Max.   :23212.2  
+                                   NA's   :1500      NA's   :1500     
+  BA.m2ha.plot     Density.ha.plot     Stems.plot     BAI.m2ha.plot   
+ Min.   : 0.0000   Min.   :   0.00   Min.   : 0.000   Min.   :0.0000  
+ 1st Qu.: 0.0000   1st Qu.:   0.00   1st Qu.: 0.000   1st Qu.:0.0000  
+ Median : 0.0705   Median :  63.66   Median : 2.000   Median :0.0274  
+ Mean   : 3.4704   Mean   : 268.53   Mean   : 8.898   Mean   :0.1135  
+ 3rd Qu.: 4.3534   3rd Qu.: 509.30   3rd Qu.:18.000   3rd Qu.:0.1935  
+ Max.   :35.8804   Max.   :1432.39   Max.   :45.000   Max.   :1.0485  
+ NA's   :1500      NA's   :1500      NA's   :1500     NA's   :1500    
+ BA.m2ha.plot.live     RelBA          Site.Trans        Latitude     
+ Min.   : 0.000    Min.   :0.00     BLDC   : 23814   Min.   :36.75   
+ 1st Qu.: 0.000    1st Qu.:0.05     IRNC   : 20898   1st Qu.:37.24   
+ Median : 1.116    Median :0.17     HIKC   : 20169   Median :37.91   
+ Mean   : 5.122    Mean   :0.30     BLDA   : 19926   Mean   :37.74   
+ 3rd Qu.: 6.584    3rd Qu.:0.46     BLDB   : 18954   3rd Qu.:38.32   
+ Max.   :57.620    Max.   :1.00     IRNB   : 18711   Max.   :38.58   
+ NA's   :985       NA's   :199115   (Other):166212   NA's   :153252  
+   Longitude           elev             flow             TPI        
+ Min.   :-81.31   Min.   : 666.9   Min.   :0.01     Min.   :-0.23   
+ 1st Qu.:-80.86   1st Qu.: 843.7   1st Qu.:0.01     1st Qu.:-0.10   
+ Median :-79.85   Median : 952.4   Median :0.03     Median :-0.03   
+ Mean   :-80.10   Mean   : 955.7   Mean   :0.12     Mean   : 0.01   
+ 3rd Qu.:-79.22   3rd Qu.:1098.3   3rd Qu.:0.06     3rd Qu.: 0.15   
+ Max.   :-79.15   Max.   :1256.7   Max.   :1.42     Max.   : 0.30   
+ NA's   :153252   NA's   :153252   NA's   :153252   NA's   :153252  
+      sol            sol.lag          Anomaly            Tavg       
+ Min.   : 90338   Min.   : 90338   Min.   :-1.48    Min.   :277.5   
+ 1st Qu.: 99340   1st Qu.: 99340   1st Qu.:-0.40    1st Qu.:281.6   
+ Median :107050   Median :107050   Median : 0.01    Median :282.8   
+ Mean   :110569   Mean   :110569   Mean   : 0.00    Mean   :282.5   
+ 3rd Qu.:121199   3rd Qu.:121199   3rd Qu.: 0.37    3rd Qu.:283.6   
+ Max.   :133748   Max.   :133748   Max.   : 1.31    Max.   :285.8   
+ NA's   :153252   NA's   :153252   NA's   :153252   NA's   :153252  
+  Precip.PRISM      Tavg.PRISM     Precip.PRISM.sum  BA.tree.cm2     
+ Min.   : 41.00   Min.   :281.3    Min.   : 492.0   Min.   :   0.00  
+ 1st Qu.: 81.45   1st Qu.:282.6    1st Qu.: 977.4   1st Qu.:   0.00  
+ Median : 92.11   Median :283.2    Median :1105.4   Median :   0.00  
+ Mean   : 93.52   Mean   :283.2    Mean   :1122.2   Mean   :  61.06  
+ 3rd Qu.:103.05   3rd Qu.:283.8    3rd Qu.:1236.7   3rd Qu.:  20.07  
+ Max.   :152.72   Max.   :285.6    Max.   :1832.7   Max.   :4621.77  
+ NA's   :154440   NA's   :261360   NA's   :154440   NA's   :1047     
+> dim(all.data)
+[1] 288684     49
+> 
+> #############
+> # Subsetting just NYSY data
+> nysy.all <- all.data[all.data$Spp=="NYSY", ]
+> summary(nysy.all)
+      Year          PlotID       Site       Trans          Plot      
+ Min.   :1771   FLTC2  : 3645   BLD: 6075   A: 7290   Min.   :1.000  
+ 1st Qu.:1831   HNKA3  : 3645   FLT: 8019   B:15552   1st Qu.:2.000  
+ Median :1892   HNKB2  : 3645   HIK:  729   C:16038   Median :2.000  
+ Mean   :1892   HNKC2  : 2673   HNK:16281             Mean   :2.256  
+ 3rd Qu.:1953   HNKB3  : 2430   IRN: 4617             3rd Qu.:3.000  
+ Max.   :2013   HNKC3  : 2187   MOR: 3159             Max.   :4.000  
+                (Other):20655                                        
+     TreeID           BAI                 CoreID      Pith         Pith.Yr    
+ BLDA305:  243   Min.   :   0.817   BLDA305HI:  243   N:22599   Min.   :1890  
+ BLDA339:  243   1st Qu.:  41.107   BLDA339HI:  243   Y:16281   1st Qu.:1915  
+ BLDA340:  243   Median :  79.597   BLDA340HI:  243             Median :1932  
+ BLDA421:  243   Mean   : 150.794   BLDA421HI:  243             Mean   :1933  
+ BLDB102:  243   3rd Qu.: 165.406   BLDB102HI:  243             3rd Qu.:1947  
+ BLDB137:  243   Max.   :2551.839   BLDB137HI:  243             Max.   :1982  
+ (Other):37422   NA's   :26905      (Other)  :37422             NA's   :9234  
+     Inner          Outer      Bark      Use      
+ Min.   :1844   Min.   :2007   N:  486   N: 1701  
+ 1st Qu.:1920   1st Qu.:2012   Y:38394   Y:37179  
+ Median :1937   Median :2012                      
+ Mean   :1938   Mean   :2012                      
+ 3rd Qu.:1953   3rd Qu.:2012                      
+ Max.   :1988   Max.   :2013                      
+                                                  
+                    Notes        Pith.offset          Tree      
+ poor corr             :  486   Min.   : 1.000   Min.   : 1.00  
+ 1999 missing          :  243   1st Qu.: 1.000   1st Qu.: 8.00  
+ 2010 & 2011 very small:  243   Median : 1.000   Median :21.00  
+ b side measured       :  243   Mean   : 2.311   Mean   :22.46  
+ can't measure to pith :  243   3rd Qu.: 3.000   3rd Qu.:34.00  
+ (Other)               : 1701   Max.   :12.000   Max.   :76.00  
+ NA's                  :35721   NA's   :9234                    
+      Spp             Genus       Canopy      Live            Age        
+ NYSY   :38880   Nyssa   :38880   C: 5103   DEAD:    0   Min.   :  0.00  
+ ACRU   :    0   Acer    :    0   D:    0   LIVE:38880   1st Qu.: 19.00  
+ ACSA   :    0   Betula  :    0   I:17253                Median : 39.00  
+ BELE   :    0   Carya   :    0   U:16524                Mean   : 42.15  
+ BEPA   :    0   Castanea:    0                          3rd Qu.: 61.00  
+ CADE   :    0   Cornus  :    0                          Max.   :208.00  
+ (Other):    0   (Other) :    0                          NA's   :26313   
+    BA.m2ha          BAI.filled         BA.tree           Stems      
+ Min.   :0.00000   Min.   :   0.00   Min.   :     0   Min.   :0.000  
+ 1st Qu.:0.00000   1st Qu.:   0.00   1st Qu.:     0   1st Qu.:0.000  
+ Median :0.00000   Median :   0.00   Median :     0   Median :0.000  
+ Mean   :0.05550   Mean   :  48.82   Mean   :  2085   Mean   :0.315  
+ 3rd Qu.:0.03602   3rd Qu.:  35.93   3rd Qu.:  1169   3rd Qu.:1.000  
+ Max.   :4.96674   Max.   :2551.84   Max.   :224739   Max.   :1.000  
+ NA's   :132       NA's   :127       NA's   :132                     
+   Density.Ha    BAI.filled.plot      BA.plot         BA.m2ha.plot     
+ Min.   : 0.00   Min.   :    0.0   Min.   :    0.0   Min.   : 0.00000  
+ 1st Qu.: 0.00   1st Qu.:    0.0   1st Qu.:    0.0   1st Qu.: 0.00000  
+ Median : 0.00   Median :  637.1   Median :  439.7   Median : 0.03769  
+ Mean   : 9.62   Mean   : 3871.4   Mean   : 1835.4   Mean   : 3.39984  
+ 3rd Qu.:22.10   3rd Qu.: 6320.0   3rd Qu.: 2556.3   3rd Qu.: 4.60905  
+ Max.   :49.74   Max.   :35506.8   Max.   :16442.7   Max.   :35.88040  
+                                                                       
+ Density.ha.plot     Stems.plot     BAI.m2ha.plot    BA.m2ha.plot.live
+ Min.   :   0.00   Min.   : 0.000   Min.   :0.0000   Min.   : 0.000   
+ 1st Qu.:   0.00   1st Qu.: 0.000   1st Qu.:0.0000   1st Qu.: 0.000   
+ Median :  37.67   Median : 2.000   Median :0.0200   Median : 1.116   
+ Mean   : 275.47   Mean   : 9.226   Mean   :0.1095   Mean   : 4.301   
+ 3rd Qu.: 552.62   3rd Qu.:19.000   3rd Qu.:0.1982   3rd Qu.: 5.433   
+ Max.   :1432.39   Max.   :45.000   Max.   :0.8590   Max.   :37.310   
+                                                     NA's   :127      
+     RelBA         Site.Trans      Latitude       Longitude     
+ Min.   :0.000   HNKB   :6318   Min.   :36.76   Min.   :-81.31  
+ 1st Qu.:0.027   FLTC   :5346   1st Qu.:37.23   1st Qu.:-80.86  
+ Median :0.051   HNKC   :5346   Median :37.91   Median :-79.84  
+ Mean   :0.115   HNKA   :4617   Mean   :37.80   Mean   :-79.98  
+ 3rd Qu.:0.120   BLDC   :4374   3rd Qu.:38.32   3rd Qu.:-79.22  
+ Max.   :1.000   IRNB   :4131   Max.   :38.57   Max.   :-79.16  
+ NA's   :26806   (Other):8748   NA's   :20640   NA's   :20640   
+      elev             flow            TPI              sol        
+ Min.   : 666.9   Min.   :0.006   Min.   :-0.234   Min.   : 90338  
+ 1st Qu.: 837.3   1st Qu.:0.013   1st Qu.:-0.099   1st Qu.: 96596  
+ Median : 856.5   Median :0.028   Median :-0.025   Median :105699  
+ Mean   : 896.2   Mean   :0.220   Mean   : 0.022   Mean   :108516  
+ 3rd Qu.: 952.4   3rd Qu.:0.061   3rd Qu.: 0.131   3rd Qu.:119388  
+ Max.   :1173.5   Max.   :1.419   Max.   : 0.300   Max.   :132473  
+ NA's   :20640    NA's   :20640   NA's   :20640    NA's   :20640   
+    sol.lag          Anomaly            Tavg        Precip.PRISM   
+ Min.   : 90338   Min.   :-1.477   Min.   :277.5   Min.   : 41.00  
+ 1st Qu.: 96596   1st Qu.:-0.398   1st Qu.:281.5   1st Qu.: 77.46  
+ Median :105699   Median : 0.009   Median :282.3   Median : 87.70  
+ Mean   :108516   Mean   :-0.003   Mean   :282.4   Mean   : 89.31  
+ 3rd Qu.:119388   3rd Qu.: 0.369   3rd Qu.:283.7   3rd Qu.: 98.38  
+ Max.   :132473   Max.   : 1.308   Max.   :285.7   Max.   :152.72  
+ NA's   :20640    NA's   :20640    NA's   :20640   NA's   :20800   
+   Tavg.PRISM    Precip.PRISM.sum  BA.tree.cm2     
+ Min.   :281.3   Min.   : 492.0   Min.   :   0.00  
+ 1st Qu.:283.1   1st Qu.: 929.5   1st Qu.:   0.00  
+ Median :283.6   Median :1052.4   Median :   0.00  
+ Mean   :283.6   Mean   :1071.7   Mean   :  20.85  
+ 3rd Qu.:284.2   3rd Qu.:1180.6   3rd Qu.:  11.69  
+ Max.   :285.6   Max.   :1832.7   Max.   :2247.39  
+ NA's   :35200   NA's   :20800    NA's   :132      
+> dim(nysy.all)
+[1] 38880    49
+> 
+> # Subsetting only complete cases & a small range of years
+> nysy.run <- nysy.all[complete.cases(nysy.all) & nysy.all$Year>=1990 & nysy.all$Year<=2011,]
+> summary(nysy.run)
+      Year          PlotID    Site     Trans       Plot           TreeID   
+ Min.   :1990   HNKA3  :44   BLD: 66   A:66   Min.   :1.000   BLDB137: 22  
+ 1st Qu.:1995   BLDB1  :22   FLT:  0   B:88   1st Qu.:2.000   BLDC232: 22  
+ Median :2000   BLDC2  :22   HIK:  0   C:88   Median :3.000   BLDC303: 22  
+ Mean   :2000   BLDC3  :22   HNK:110          Mean   :2.364   HNKA321: 22  
+ 3rd Qu.:2006   HNKB2  :22   IRN: 22          3rd Qu.:3.000   HNKA323: 22  
+ Max.   :2011   HNKB3  :22   MOR: 44          Max.   :3.000   HNKB228: 22  
+                (Other):88                                    (Other):110  
+      BAI                 CoreID    Pith       Pith.Yr         Inner     
+ Min.   :   4.396   BLDB137HI: 22   N: 88   Min.   :1911   Min.   :1912  
+ 1st Qu.:  41.258   BLDC232HI: 22   Y:154   1st Qu.:1927   1st Qu.:1929  
+ Median : 100.288   BLDC303HI: 22           Median :1934   Median :1935  
+ Mean   : 187.372   HNKA321HI: 22           Mean   :1934   Mean   :1935  
+ 3rd Qu.: 276.456   HNKA323HI: 22           3rd Qu.:1941   3rd Qu.:1943  
+ Max.   :1161.134   HNKB228HI: 22           Max.   :1953   Max.   :1954  
+                    (Other)  :110                                        
+     Outer      Bark    Use                        Notes     Pith.offset   
+ Min.   :2011   N: 22   N:132   poor corr             :44   Min.   :1.000  
+ 1st Qu.:2012   Y:220   Y:110   1999 missing          :22   1st Qu.:1.000  
+ Median :2012                   2010 & 2011 very small:22   Median :1.000  
+ Mean   :2012                   b side measured       :22   Mean   :1.636  
+ 3rd Qu.:2012                   can't measure to pith :22   3rd Qu.:2.000  
+ Max.   :2012                   cored twice           :22   Max.   :4.000  
+                                (Other)               :88                  
+      Tree            Spp           Genus     Canopy    Live    
+ Min.   : 1.00   NYSY   :242   Nyssa   :242   C: 22   DEAD:  0  
+ 1st Qu.: 3.00   ACRU   :  0   Acer    :  0   D:  0   LIVE:242  
+ Median :28.00   ACSA   :  0   Betula  :  0   I: 88             
+ Mean   :23.91   BELE   :  0   Carya   :  0   U:132             
+ 3rd Qu.:36.00   BEPA   :  0   Castanea:  0                     
+ Max.   :48.00   CADE   :  0   Cornus  :  0                     
+                 (Other):  0   (Other) :  0                     
+      Age            BA.m2ha          BAI.filled          BA.tree     
+ Min.   : 37.00   Min.   :0.03480   Min.   :   4.396   Min.   : 1501  
+ 1st Qu.: 57.25   1st Qu.:0.08632   1st Qu.:  41.258   1st Qu.: 2468  
+ Median : 66.00   Median :0.12319   Median : 100.288   Median : 4189  
+ Mean   : 66.86   Mean   :0.17168   Mean   : 187.372   Mean   : 6509  
+ 3rd Qu.: 75.75   3rd Qu.:0.21674   3rd Qu.: 276.456   3rd Qu.: 7211  
+ Max.   :100.00   Max.   :0.58586   Max.   :1161.134   Max.   :31113  
+                                                                      
+     Stems     Density.Ha    BAI.filled.plot    BA.plot       BA.m2ha.plot   
+ Min.   :1   Min.   :18.83   Min.   : 3534   Min.   : 2340   Min.   : 2.887  
+ 1st Qu.:1   1st Qu.:22.10   1st Qu.: 8084   1st Qu.: 5378   1st Qu.:10.767  
+ Median :1   Median :31.83   Median :11593   Median : 7521   Median :16.695  
+ Mean   :1   Mean   :30.21   Mean   :14233   Mean   : 7863   Mean   :15.406  
+ 3rd Qu.:1   3rd Qu.:31.83   3rd Qu.:20426   3rd Qu.: 9825   3rd Qu.:19.907  
+ Max.   :1   Max.   :49.74   Max.   :35507   Max.   :16174   Max.   :25.129  
+                                                                             
+ Density.ha.plot    Stems.plot   BAI.m2ha.plot    BA.m2ha.plot.live
+ Min.   : 541.1   Min.   :17.0   Min.   :0.1125   Min.   : 4.816   
+ 1st Qu.: 640.4   1st Qu.:26.0   1st Qu.:0.2900   1st Qu.:15.000   
+ Median : 891.3   Median :30.0   Median :0.3643   Median :18.545   
+ Mean   : 841.2   Mean   :28.7   Mean   :0.3774   Mean   :18.462   
+ 3rd Qu.: 986.8   3rd Qu.:32.0   3rd Qu.:0.4767   3rd Qu.:23.275   
+ Max.   :1094.2   Max.   :34.0   Max.   :0.8061   Max.   :30.940   
+                                                                   
+     RelBA            Site.Trans    Latitude       Longitude     
+ Min.   :0.009991   BLDC   :44   Min.   :36.76   Min.   :-81.31  
+ 1st Qu.:0.024264   HNKA   :44   1st Qu.:37.73   1st Qu.:-80.11  
+ Median :0.049496   HNKB   :44   Median :37.92   Median :-79.84  
+ Mean   :0.069043   BLDB   :22   Mean   :37.96   Mean   :-79.75  
+ 3rd Qu.:0.102703   HNKC   :22   3rd Qu.:38.32   3rd Qu.:-79.23  
+ Max.   :0.228873   IRNB   :22   Max.   :38.32   Max.   :-79.22  
+                    (Other):44                                   
+      elev             flow               TPI                sol        
+ Min.   : 666.9   Min.   :0.006178   Min.   :-0.21457   Min.   : 94879  
+ 1st Qu.: 837.3   1st Qu.:0.007416   1st Qu.:-0.11899   1st Qu.: 96596  
+ Median : 880.1   Median :0.022656   Median : 0.02124   Median :105699  
+ Mean   : 886.2   Mean   :0.160070   Mean   : 0.03922   Mean   :106086  
+ 3rd Qu.: 952.4   3rd Qu.:0.038805   3rd Qu.: 0.23650   3rd Qu.:118510  
+ Max.   :1151.5   Max.   :1.240813   Max.   : 0.28718   Max.   :119858  
+                                                                        
+    sol.lag          Anomaly              Tavg        Precip.PRISM   
+ Min.   : 94879   Min.   :-0.78176   Min.   :278.3   Min.   : 65.15  
+ 1st Qu.: 96596   1st Qu.:-0.32481   1st Qu.:281.8   1st Qu.: 82.75  
+ Median :105699   Median : 0.04472   Median :282.4   Median : 89.39  
+ Mean   :106086   Mean   : 0.10365   Mean   :282.4   Mean   : 92.47  
+ 3rd Qu.:118510   3rd Qu.: 0.48712   3rd Qu.:283.4   3rd Qu.:100.31  
+ Max.   :119858   Max.   : 1.12121   Max.   :285.2   Max.   :135.49  
+                                                                     
+   Tavg.PRISM    Precip.PRISM.sum  BA.tree.cm2    
+ Min.   :281.7   Min.   : 781.8   Min.   : 15.01  
+ 1st Qu.:283.0   1st Qu.: 993.0   1st Qu.: 24.68  
+ Median :283.4   Median :1072.7   Median : 41.89  
+ Mean   :283.5   Mean   :1109.6   Mean   : 65.09  
+ 3rd Qu.:283.9   3rd Qu.:1203.7   3rd Qu.: 72.11  
+ Max.   :285.0   Max.   :1625.9   Max.   :311.13  
+                                                  
+> dim(nysy.run)
+[1] 242  49
+> 
+> write.csv(nysy.run, "Inputs/NYSY_AllSites_1990-2011.csv", row.names=F)
+> 
+> ################################################
+> # Reading in Data
+> nysy.run <- read.csv("Inputs/NYSY_AllSites_1990-2011.csv")
+> summary(nysy.run)
+      Year          PlotID    Site     Trans       Plot           TreeID   
+ Min.   :1990   HNKA3  :44   BLD: 66   A:66   Min.   :1.000   BLDB137: 22  
+ 1st Qu.:1995   BLDB1  :22   HNK:110   B:88   1st Qu.:2.000   BLDC232: 22  
+ Median :2000   BLDC2  :22   IRN: 22   C:88   Median :3.000   BLDC303: 22  
+ Mean   :2000   BLDC3  :22   MOR: 44          Mean   :2.364   HNKA321: 22  
+ 3rd Qu.:2006   HNKB2  :22                    3rd Qu.:3.000   HNKA323: 22  
+ Max.   :2011   HNKB3  :22                    Max.   :3.000   HNKB228: 22  
+                (Other):88                                    (Other):110  
+      BAI                 CoreID    Pith       Pith.Yr         Inner     
+ Min.   :   4.396   BLDB137HI: 22   N: 88   Min.   :1911   Min.   :1912  
+ 1st Qu.:  41.258   BLDC232HI: 22   Y:154   1st Qu.:1927   1st Qu.:1929  
+ Median : 100.288   BLDC303HI: 22           Median :1934   Median :1935  
+ Mean   : 187.372   HNKA321HI: 22           Mean   :1934   Mean   :1935  
+ 3rd Qu.: 276.456   HNKA323HI: 22           3rd Qu.:1941   3rd Qu.:1943  
+ Max.   :1161.134   HNKB228HI: 22           Max.   :1953   Max.   :1954  
+                    (Other)  :110                                        
+     Outer      Bark    Use                        Notes     Pith.offset   
+ Min.   :2011   N: 22   N:132   poor corr             :44   Min.   :1.000  
+ 1st Qu.:2012   Y:220   Y:110   1999 missing          :22   1st Qu.:1.000  
+ Median :2012                   2010 & 2011 very small:22   Median :1.000  
+ Mean   :2012                   b side measured       :22   Mean   :1.636  
+ 3rd Qu.:2012                   can't measure to pith :22   3rd Qu.:2.000  
+ Max.   :2012                   cored twice           :22   Max.   :4.000  
+                                (Other)               :88                  
+      Tree         Spp        Genus     Canopy    Live          Age        
+ Min.   : 1.00   NYSY:242   Nyssa:242   C: 22   LIVE:242   Min.   : 37.00  
+ 1st Qu.: 3.00                          I: 88              1st Qu.: 57.25  
+ Median :28.00                          U:132              Median : 66.00  
+ Mean   :23.91                                             Mean   : 66.86  
+ 3rd Qu.:36.00                                             3rd Qu.: 75.75  
+ Max.   :48.00                                             Max.   :100.00  
+                                                                           
+    BA.m2ha          BAI.filled          BA.tree          Stems  
+ Min.   :0.03480   Min.   :   4.396   Min.   : 1501   Min.   :1  
+ 1st Qu.:0.08632   1st Qu.:  41.258   1st Qu.: 2468   1st Qu.:1  
+ Median :0.12319   Median : 100.288   Median : 4189   Median :1  
+ Mean   :0.17168   Mean   : 187.372   Mean   : 6509   Mean   :1  
+ 3rd Qu.:0.21674   3rd Qu.: 276.456   3rd Qu.: 7211   3rd Qu.:1  
+ Max.   :0.58586   Max.   :1161.134   Max.   :31113   Max.   :1  
+                                                                 
+   Density.Ha    BAI.filled.plot    BA.plot       BA.m2ha.plot   
+ Min.   :18.83   Min.   : 3534   Min.   : 2340   Min.   : 2.887  
+ 1st Qu.:22.10   1st Qu.: 8084   1st Qu.: 5378   1st Qu.:10.767  
+ Median :31.83   Median :11593   Median : 7521   Median :16.695  
+ Mean   :30.21   Mean   :14233   Mean   : 7863   Mean   :15.406  
+ 3rd Qu.:31.83   3rd Qu.:20426   3rd Qu.: 9825   3rd Qu.:19.907  
+ Max.   :49.74   Max.   :35507   Max.   :16174   Max.   :25.129  
+                                                                 
+ Density.ha.plot    Stems.plot   BAI.m2ha.plot    BA.m2ha.plot.live
+ Min.   : 541.1   Min.   :17.0   Min.   :0.1125   Min.   : 4.816   
+ 1st Qu.: 640.4   1st Qu.:26.0   1st Qu.:0.2900   1st Qu.:15.000   
+ Median : 891.3   Median :30.0   Median :0.3643   Median :18.545   
+ Mean   : 841.2   Mean   :28.7   Mean   :0.3774   Mean   :18.462   
+ 3rd Qu.: 986.8   3rd Qu.:32.0   3rd Qu.:0.4767   3rd Qu.:23.275   
+ Max.   :1094.2   Max.   :34.0   Max.   :0.8061   Max.   :30.940   
+                                                                   
+     RelBA            Site.Trans    Latitude       Longitude     
+ Min.   :0.009991   BLDC   :44   Min.   :36.76   Min.   :-81.31  
+ 1st Qu.:0.024264   HNKA   :44   1st Qu.:37.73   1st Qu.:-80.11  
+ Median :0.049496   HNKB   :44   Median :37.92   Median :-79.84  
+ Mean   :0.069043   BLDB   :22   Mean   :37.96   Mean   :-79.75  
+ 3rd Qu.:0.102703   HNKC   :22   3rd Qu.:38.32   3rd Qu.:-79.23  
+ Max.   :0.228873   IRNB   :22   Max.   :38.32   Max.   :-79.22  
+                    (Other):44                                   
+      elev             flow               TPI                sol        
+ Min.   : 666.9   Min.   :0.006178   Min.   :-0.21457   Min.   : 94879  
+ 1st Qu.: 837.3   1st Qu.:0.007416   1st Qu.:-0.11899   1st Qu.: 96596  
+ Median : 880.1   Median :0.022656   Median : 0.02124   Median :105699  
+ Mean   : 886.2   Mean   :0.160070   Mean   : 0.03922   Mean   :106086  
+ 3rd Qu.: 952.4   3rd Qu.:0.038805   3rd Qu.: 0.23650   3rd Qu.:118510  
+ Max.   :1151.5   Max.   :1.240813   Max.   : 0.28718   Max.   :119858  
+                                                                        
+    sol.lag          Anomaly              Tavg        Precip.PRISM   
+ Min.   : 94879   Min.   :-0.78176   Min.   :278.3   Min.   : 65.15  
+ 1st Qu.: 96596   1st Qu.:-0.32481   1st Qu.:281.8   1st Qu.: 82.75  
+ Median :105699   Median : 0.04472   Median :282.4   Median : 89.39  
+ Mean   :106086   Mean   : 0.10365   Mean   :282.4   Mean   : 92.47  
+ 3rd Qu.:118510   3rd Qu.: 0.48712   3rd Qu.:283.4   3rd Qu.:100.31  
+ Max.   :119858   Max.   : 1.12121   Max.   :285.2   Max.   :135.49  
+                                                                     
+   Tavg.PRISM    Precip.PRISM.sum  BA.tree.cm2    
+ Min.   :281.7   Min.   : 781.8   Min.   : 15.01  
+ 1st Qu.:283.0   1st Qu.: 993.0   1st Qu.: 24.68  
+ Median :283.4   Median :1072.7   Median : 41.89  
+ Mean   :283.5   Mean   :1109.6   Mean   : 65.09  
+ 3rd Qu.:283.9   3rd Qu.:1203.7   3rd Qu.: 72.11  
+ Max.   :285.0   Max.   :1625.9   Max.   :311.13  
+                                                  
+> 
+> # Loading previous runs
+> #load(file="Test results for NYSY 4 - All Sites 1990-2011.Rdata")
+> 
+> ####################################################################################################################
+> overall.model <- function(
++ 							SIZE,aa,ab, gmax,             # Autogenic (a) -- ABSOLUTE UNITS (from gmax)
++                             BA.PLOT,RS,ca,cb,cc,cd,ce,cf,cg, # Competition (c) -- scalar
++                             # # BA.PLOT,RS,ca,cb,cc,cd,cf,cg, # Competition (c) -- scalar, removed intercept
++                             TEMP,ta1,tb1,					 # Temperature (t) -- scalar
++                             PRECIP,FLOW,pa1,pb1,pc1         	 # Preciptiation (p) -- scalar
++                             # TRANS, ha		             	 # Habitat (h) -- scalar
++                             )
++ 	{
++ 	################
++ 	# Autogenic Growth: 0-1 * gmax (max possible growth, absolute units)
++ 	################
++ 	autogenic.effect <- gmax*(1 - aa*exp(-ab*SIZE))   
++ 	# autogenic.effect <- gmax*(1-aa*exp(-ab*SIZE))   
++ 
++ 
++ 	################
++ 	# Competition Effect: 0-1 
++ 	################
++ 	size.effect <- ca*exp(-cb*(RS^cc))
++ 	comp.effect <- (ce/1000 + ( (1-ce/1000)/(1+(BA.PLOT/cf)^cg)))
++ 	# comp.effect <- (1/(1+(BA.PLOT/cf)^cg))
++ 	comp.response <- exp(-size.effect*(comp.effect^cd))
++ 
++  	################
++ 	# Climate Effect: Now Scalar
++ 	################
++ 	
++ 	#Temp on scale 0-1
++     temp.effect <- (exp(-0.5*(((TEMP)-ta1)/tb1)^2))
++ 
++     # Precip on scale 0-1
++     # precip.effect <- t(1/(1+(t(PRECIP)/pa1)^pb1))
++ 	precip.effect <- (exp(-0.5*(((PRECIP + pc1*FLOW*PRECIP)-pa1)/pb1)^2)) # Gaussian Data Frame
++ 
++ 	# Multiplying temp & precip together
++     climate.effect <- temp.effect * precip.effect
++ 	 
++ 	 ### LEM: do row sums
++ 	 ##### CRR note: I think this should be on a scale from 0-1; 
++      # climate.effect <- colSums(climate.effect) 
++ 	 # climate.effect2 <- apply(climate.effect, 1, FUN=prod)
++ 	
++ 
++ 	################
++ 	# Habitat Effect: 0-1
++ 	# Note: removed from model for the moment, may add Topographic position or upslope area later
++ 	################
++ 	# habitat.effect <- ha[TRANS]
++ 
++ 	# comp.response <- 1
++ 	habitat.effect <- 1
++ 	# climate.effect2 <- precip.effect
++ 
++ 	autogenic.effect*comp.response*habitat.effect*climate.effect
++ 	
++ 
++ 	}
+> 
+> 
+> ####################################################################################################################
+> ####################################################################################################################
+> ### setting up annealing
+> 
+> # par <- results$best_par
+> 
+> # need a list that gives initial values for all of the "parameters"
+> par<-list(
++ 		  aa=1, ab=0.002, gmax=4800,  	# Autogenic
++           ca=2000, cb=8.7, cc=0.06, cd=4.7, ce=843, cf=20, cg=-115,  # Competition
++           ta1=283.7, tb1=2.6,
++           pa1=100, pb1=9200, pc1=0.002,
++           # # ha=rep(0.5,3),  # Habitat
++           sd=79)
+> 
+> # also need a list that identifies the independent variables
+> var <- list(SIZE = "BA.tree.cm2",  # Autogenic
++             BA.PLOT="BA.m2ha.plot.live", RS="RelBA",  # Competition
++             TEMP = "Tavg", # hard-coded above
++             PRECIP = "Precip.PRISM.sum", FLOW="flow"
++             # TRANS="Site.Trans" # Habitat
++             )
+> 
+> ## Set bounds and initial search ranges within which to search for parameters
+> ##   NOTE:  the s and sd parameters have to be greater than zero (algebraically)
+> par_lo <-list(
++ 			  aa=0, ab=0, gmax=0,  # Autogenic
++               ca=0, cb=0, cc=0, cd=0, ce=0, cf=-100, cg=-1000, # Competition
++               # # ca=0, cb=0, cc=0, cd=0, cf=-100, cg=-200, # Competition
++               ta1=250, tb1=0,
++               pa1=100, pb1=0, pc1=0,
++ 			# ha=rep(0,3), # Habitat
++               sd=0.1)
+> 
+> 
+> par_hi <-list(
++ 			  aa=1, ab=1000, gmax=10000, # Autogenic
++               ca=2000, cb=1000, cc=5, cd=5, ce=1000, cf=2000, cg=1000,	# Competition
++               # # ca=1000, cb=1000, cc=50, cd=5, cf=500, cg=1000,	# Competition
++               ta1=325, tb1=500,
++               pa1=5000, pb1=10000, pc1=1,
++               # ha=rep(1,3), # Habitat
++               sd=1000)
+> 
+> ## Specify the dependent variable, and name it using whatever
+> ##    argument name is used in the pdf ("x" in the normal.pdf function above)
+> var$x<-"BAI"
+> 
+> ## predicted value in your PDF should be given the reserved name "predicted"
+> ##   Anneal will use your scientific model and your data and calculate the
+> ##   predicted value for each observation and store it internally in an object
+> ##   called "predicted"
+> var$mean<-"predicted"
+> 
+> ## Have it calculate log likelihood
+> var$log<-TRUE
+> 
+> ##  now call the annealing algorithm, choosing which model to use
+> #  "data" should be whatever the name of your dataframe is...
+> results <- anneal(overall.model, par, var, nysy.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+> 
+> save(results,file=file.path("Outputs", paste(run.label, "_Results.Rdata", sep="")))
+> 
+> write_results(results,file.path("Outputs", paste(run.label, "_Results.txt", sep="")))
+> 
+> ## display some of the results in the console
+> results$best_pars;
+$aa
+[1] 1
+
+$ab
+[1] 0.00244756
+
+$gmax
+[1] 3966.628
+
+$ca
+[1] 1597.152
+
+$cb
+[1] 8.955045
+
+$cc
+[1] 0.07731016
+
+$cd
+[1] 1.100557
+
+$ce
+[1] 469.8355
+
+$cf
+[1] 20.17612
+
+$cg
+[1] -92.14295
+
+$ta1
+[1] 283.813
+
+$tb1
+[1] 2.752842
+
+$pa1
+[1] 4979.966
+
+$pb1
+[1] 9997.026
+
+$pc1
+[1] 0.406993
+
+$sd
+[1] 79.31655
+
+> results$max_likeli;
+[1] -1403.492
+> results$aic_corr ;
+[1] 2841.402
+> results$slope;
+[1] 0.9952477
+> results$R2
+[1] 0.8570568
+> 
+> ####################################################################################################################
+> ####################################################################################################################
+> load(file=file.path("Outputs", paste(run.label, "_Results.Rdata", sep="")))
+> 
+> 
+> # Looking at Residuals and Parameters
+> #windows()
+> plot(results$source_data$predicted,results$source_data$BAI,xlab="Predicted",ylab="Observed")
+> abline(0,1,lwd=2,col="red")
+> 
+> results$source_data$residual <- results$source_data$BAI - results$source_data$predicted
+> #windows()
+> hist(results$source_data$residual)
+> 
+> 
+> ##################################
+> autogenic.effect <- function(SIZE,aa,ab) { (1 - aa*exp(-ab*SIZE))  }
+> ##################################
+> plot(BAI ~ BA.tree.cm2, data=results$source_data)
+> plot(BAI ~ Age, data=results$source_data)
+> plot(BA.tree.cm2 ~ Age, data=results$source_data)
+> 
+> summary(results$source_data$BA.tree.cm2)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  15.01   24.68   41.89   65.09   72.11  311.10 
+> summary(results$source_data$Age)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  37.00   57.25   66.00   66.86   75.75  100.00 
+> 
+> # Effect of Tree Basal Area
+> #windows()
+> par(mar=c(5,5,4,2), mfrow=c(1,1))
+> x <- seq(0,max(ceiling(results$source_data$BA.tree.cm2)),1)
+> y <- autogenic.effect(x,results$best_pars$aa,results$best_pars$ab)
+> 
+> pdf(file.path("Figures", paste(run.label, " - Autogenic Scalar.pdf", sep="")))
+> plot(x,y,ylim=c(0,1),xlab="Tree Basal Area (cm2)",ylab="Effect of Size on Growth",
++      cex.axis=1.25,cex.lab=1.5,type="l",lwd=2,main=run.label)
+> dev.off()
+pdf 
+  2 
+> 
+> 
+> #################################
+> size.effect <- function(SIZE,ca,cb,cc) {ca*exp(-cb*(SIZE^cc))}
+> comp.effect <- function(BA.PLOT,ce,cf,cg) {ce/1000 + ( (1-ce/1000)/(1+(BA.PLOT/cf)^cg))}
+> comp.response <- function(SIZE,BA.PLOT,ca,cb,cc,cd,ce,cf,cg)
++   { size.effect <- ca*exp(-cb*(SIZE^cc))
++     comp.effect <- (ce/1000 + ( (1-ce/1000)/(1+(BA.PLOT/cf)^cg)))
++     comp.response <- exp(-size.effect*(comp.effect^cd)) }
+> ##################################
+> # Size Effect
+> plot(BAI ~ RelBA, data=results$source_data)
+> 
+> par(mar=c(5,5,4,2))
+> x <- seq(0,1,0.01)
+> y <- size.effect(x,results$best_pars$ca, results$best_pars$cb,results$best_pars$cc)
+> summary(y)
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+   0.2062    0.2511    0.3290   16.2800    0.5122 1597.0000 
+> 
+> pdf(file.path("Figures", paste(run.label, " - Competition Size Effect.pdf", sep="")))
+> plot(x,y,xlab="Relative Size",ylab="Size Effect",type="l",lwd=2,
++       cex.lab=1.5,cex.axis=1.25,main=run.label)
+> #savePlot(file=paste("Competition Plot 1 ",run.label,".png",sep=""),type="png")
+> dev.off()
+pdf 
+  2 
+> 
+> #####################
+> # Plot BA effect
+> plot(BAI ~ BA.m2ha.plot, data=results$source_data)
+> 
+> par(mar=c(5,5,4,2))
+> x <- seq(0,60,0.1)
+> y <- comp.effect(x, results$best_pars$ce, results$best_pars$cf,results$best_pars$cg)
+> summary(y)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.4698  0.4698  1.0000  0.8215  1.0000  1.0000 
+> 
+> pdf(file.path("Figures", paste(run.label, " - Competition Competitive Effect.pdf", sep="")))
+> plot(x,y,ylim=c(0,1),xlab="Plot BA",ylab="Competitive Effect",type="l",lwd=2,
++        cex.lab=1.5,cex.axis=1.25,main=run.label)
+> dev.off()
+pdf 
+  2 
+> #savePlot(file=paste("Competition Plot 2 ",run.label,".png",sep=""),type="png")
+> 
+> #####################
+> # Competition Response: Size vs. Response with different plot BA levels
+> plot(BA.m2ha.plot~ RelBA, data=results$source_data)
+> 
+> 
+> pdf(file.path("Figures", paste(run.label, " - Competition Response Scalar.pdf", sep="")))
+> par(mar=c(5,5,4,2))
+> colors <- c("red","orange","blue","cyan","green")
+> x <- seq(0,1,0.01)
+> y <- comp.response(SIZE=x, BA.PLOT=50, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> plot(x,y,ylim=c(0,1),xlab="Relative Size",ylab="Competition Scalar",type="l",col=colors[1],lwd=2,
++      cex.lab=1.5,cex.axis=1.25,main=run.label)
+> y <- comp.response(SIZE=x, BA.PLOT=40, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[2],lwd=2)
+> y <- comp.response(SIZE=x, BA.PLOT=30, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[3],lwd=2)
+> y <- comp.response(SIZE=x, BA.PLOT=20, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[4],lwd=2)
+> y <- comp.response(SIZE=x, BA.PLOT=10, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[5],lwd=2)
+> lines(x,y,col=colors[6],lwd=2)
+> legend("bottomright",legend=c(50,40,30,20,10),col=colors,bty="n",lwd=2,title="Plot\nBasal\nArea",cex=1.25)
+> dev.off()
+pdf 
+  2 
+> #savePlot(file=paste("Competition Plot 3 ",run.label,".png",sep=""),type="png")
+> 
+> 
+> ##################################
+> temp.effect <- function(TEMP,ta1,tb1)
++        { (exp(-0.5*(((TEMP)-ta1)/tb1)^2))  }
+> 
+> precip.effect <- function(PRECIP,pa1,pb1)
++        { (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
+> 
+> # precip.effect <- function(PRECIP,pa1,pb1)
+>        # { (1/(1+((PRECIP)/pa1)^pb1))  }
+> 
+> climate.effect <- function(TEMP,PRECIP,ta1,tb1,pa1,pb1)
++        { (exp(-0.5*(((TEMP)-ta1)/tb1)^2)) * (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
+> ##################################
+> # Temperature
+> plot(nysy.run$BAI ~ rowMeans(nysy.run[,temp.col]), xlab="Mean Temp Mar-Oct", ylab="BAI (mm)")
+Error in `[.data.frame`(nysy.run, , temp.col) : 
+  object 'temp.col' not found
+Calls: plot ... eval -> rowMeans -> is.data.frame -> [ -> [.data.frame
+Execution halted
