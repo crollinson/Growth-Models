@@ -8,4 +8,4 @@
 #$ -l h_rt=24:00:00
 #$ -N QURU_Ann
 #cd ~/CARCA/Growth-Models/Annual/Scripts/
-R CMD BATCH QURU_Full_AnnClim.R
+R CMD BATCH QURU_Full_AnnClim.R QURU_Ann.log
