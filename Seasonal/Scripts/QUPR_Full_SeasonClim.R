@@ -9,42 +9,35 @@
 ####################################################
 rm(list=ls())
 
+data_directory <- "~/CARCA/Growth-Models/Seasonal/"
+#memory.size(4024)
+setwd(data_directory)
 library(likelihood)
 
-# run.label <- "QUPR_Full_Season5"
+# run.label <- "QUPR_Full_Season"
 # load(file=paste( run.label, "_Results.Rdata", sep=""))
 
 run.label <- "QUPR_Full_Season"
 
-# #############
-# # Reading in Test Data & some formating
-# all.data <-read.csv("CARCA_CoreData_Tree_Plot_Tavg_Ppt_WideFormat.csv")
-# all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
-# all.data$BA.tree.cm2 <- all.data$BA.tree/100
-# all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
-# summary(all.data)
-# dim(all.data)
-
-# #############
-# # Subsetting just QUPR data
-# qupr.all <- all.data[all.data$Spp=="QUPR", ]
-# summary(qupr.all)
-# dim(qupr.all)
-
-# # Subsetting only complete cases & a small range of years
-# qupr.run <- qupr.all[complete.cases(qupr.all) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
-# summary(qupr.run)
-# dim(qupr.run)
-
-# write.csv(qupr.run, "QUPR_AllSites_1990-2011.csv", row.names=F)
+#############
+# Reading in Test Data & some formating
+all.data <-read.csv("../RawInputs/CARCA_CoreData_Climate_Month_Wide.csv")
+all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
+all.data$BA.tree.cm2 <- all.data$BA.tree/100
+all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
+summary(all.data)
+dim(all.data)
 
 #############
-# Reading in Data
-qupr.run <- read.csv("QUPR_AllSites_1990-2011.csv")
-summary(qupr.run)
+# Subsetting just QUPR data
+qupr.all <- all.data[all.data$Spp=="QUPR", ]
+summary(qupr.all)
+dim(qupr.all)
 
-# Loading previous runs
-#load(file="Test results for QUPR 4 - All Sites 1990-2011.Rdata")
+# Subsetting only complete cases & a small range of years
+qupr.run <- qupr.all[complete.cases(qupr.all) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
+summary(qupr.run)
+dim(qupr.run)
 
 #############
 # Vector with names of Months of the year
@@ -86,6 +79,17 @@ length(temp.col.ind)
 
 # qupr.run$Tavg.yr <- rowMeans(qupr.run[,temp.col.ind])
 # qupr.run$Precip.yr <- rowSums(qupr.run[,precip.col.ind])
+
+write.csv(qupr.run, "Inputs/QUPR_AllSites_1990-2011.csv", row.names=F)
+
+#############
+# Reading in Data
+qupr.run <- read.csv("Inputs/QUPR_AllSites_1990-2011.csv")
+summary(qupr.run)
+
+# Loading previous runs
+#load(file="Test results for QUPR 4 - All Sites 1990-2011.Rdata")
+
 
 ####################################################################################################################
 overall.model <- function(
@@ -156,21 +160,21 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=1, ab=0.00059, gmax=5000,  	# Autogenic
-          ca=381.8, cb=2.4, cc=4.9, cd=0.84, ce=00, cf=187.8, cg=-4.9,  # Competition
-          ta1=c(259.7,	269.8,	290.4,	284.8,	295.0,	301.6), 
-          tb1=c(500,	257,	31.0,	235.8,	459,	64.0),
-          pa1=c(337.3,	242.6,	9.7,	64.3,	192.1,	20.76), 
-          pb1=c(740.5,	606.7,	235.22,	1338.8,	309.13,	377.6), 
-          pc1=0.016, 
+		  aa=0.9, ab=0.0003, gmax=9500,  	# Autogenic
+          ca=987.3, cb=64.9, cc=1.2, cd=1.05, ce=625.94, cf=902.03, cg=-292.7,  # Competition
+          ta1=c(304.7,	294.1,	321.12,	324.86,	267.88,	297.18), 
+          tb1=c(216.63,	16.84,	291.93,	464.16,	315.28,	422.35),
+          pa1=c(260.73,	178.76,	72.62,	0.00,	2.08,	393.24), 
+          pb1=c(460.36,	210.83,	760.55,	191.68,	199.6,	1648.7), 
+          pc1=0.0001, 
           # # ha=rep(0.5,3),  # Habitat
-          sd=409)
+          sd=256)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
             BA.PLOT="BA.m2ha.plot.live", RS="RelBA",  # Competition
             TEMP = qupr.run[,temp.col.ind], # hard-coded above
-            PRECIP = qupr.run[,precip.col.ind], FLOW="flow.acc"
+            PRECIP = qupr.run[,precip.col.ind], FLOW="flow"
             # TRANS="Site.Trans" # Habitat
             )
 
@@ -187,8 +191,8 @@ par_lo <-list(
 
 
 par_hi <-list(
-			  aa=1, ab=1000, gmax=5000, # Autogenic
-              ca=1000, cb=1000, cc=5, cd=5, ce=1000, cf=1000, cg=1000,	# Competition
+			  aa=1, ab=1000, gmax=10000, # Autogenic
+              ca=2000, cb=1000, cc=5, cd=5, ce=1000, cf=1000, cg=1000,	# Competition
               # # ca=1000, cb=1000, cc=50, cd=5, cf=500, cg=1000,	# Competition
               ta1=rep(325, length=length(temp.col.ind)), tb1=rep(500, length=length(temp.col.ind)),
               pa1=rep(500, length=length(precip.col.ind)), pb1=rep(2000, length=length(precip.col.ind)), pc1=1,
@@ -210,11 +214,11 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian = F, slimit=1.92, max_iter=50000)
+results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
 
-save(results,file=paste( run.label, "_Results.Rdata", sep=""))
+save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 
-write_results(results,paste( run.label, "_Results.txt", sep=""))
+write_results(results,file.path("Outputs", paste( run.label, "_Results.txt", sep="")))
 
 ## display some of the results in the console
 results$best_pars;
@@ -225,7 +229,7 @@ results$R2
 
 ####################################################################################################################
 ####################################################################################################################
-load(file=paste( run.label, "_Results.Rdata", sep=""))
+load(file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 
 
 # Looking at Residuals and Parameters
@@ -254,7 +258,7 @@ par(mar=c(5,5,4,2), mfrow=c(1,1))
 x <- seq(0,max(ceiling(results$source_data$BA.tree.cm2)),1)
 y <- autogenic.effect(x,results$best_pars$aa,results$best_pars$ab)
 
-pdf( paste(run.label, " - Autogenic Scalar.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Autogenic Scalar.pdf", sep="")))
 plot(x,y,ylim=c(0,1),xlab="Tree Basal Area (cm2)",ylab="Effect of Size on Growth",
      cex.axis=1.25,cex.lab=1.5,type="l",lwd=2,main=run.label)
 dev.off()
@@ -276,7 +280,7 @@ x <- seq(0,1,0.01)
 y <- size.effect(x,results$best_pars$ca, results$best_pars$cb,results$best_pars$cc)
 summary(y)
 
-pdf( paste(run.label, " - Competition Size Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Size Effect.pdf", sep="")))
 plot(x,y,xlab="Relative Size",ylab="Size Effect",type="l",lwd=2,
       cex.lab=1.5,cex.axis=1.25,main=run.label)
 #savePlot(file=paste("Competition Plot 1 ",run.label,".png",sep=""),type="png")
@@ -291,7 +295,7 @@ x <- seq(0,60,0.1)
 y <- comp.effect(x, results$best_pars$ce, results$best_pars$cf,results$best_pars$cg)
 summary(y)
 
-pdf( paste(run.label, " - Competition Competitive Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Competitive Effect.pdf", sep="")))
 plot(x,y,ylim=c(0,1),xlab="Plot BA",ylab="Competitive Effect",type="l",lwd=2,
        cex.lab=1.5,cex.axis=1.25,main=run.label)
 dev.off()
@@ -302,7 +306,7 @@ dev.off()
 plot(BA.m2ha.plot~ RelBA, data=results$source_data)
 
 
-pdf( paste(run.label, " - Competition Response Scalar.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Response Scalar.pdf", sep="")))
 par(mar=c(5,5,4,2))
 colors <- c("red","orange","blue","cyan","green")
 x <- seq(0,1,0.01)
@@ -327,14 +331,14 @@ dev.off()
 temp.effect <- function(TEMP,ta1,tb1)
        { t(exp(-0.5*((t(TEMP)-ta1)/tb1)^2))  }
 
-precip.effect <- function(PRECIP,pa1,pb1)
-       { t(exp(-0.5*((t(PRECIP)-pa1)/pb1)^2)) }
+precip.effect <- function(PRECIP,FLOW,pa1,pb1,pc1)
+       { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) }
 
 # precip.effect <- function(PRECIP,pa1,pb1)
        # { (1/(1+((PRECIP)/pa1)^pb1))  }
 
-climate.effect <- function(TEMP,PRECIP,ta1,tb1,pa1,pb1)
-       { (exp(-0.5*(((TEMP)-ta1)/tb1)^2)) * (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
+climate.effect <- function(TEMP,PRECIP,FLOW,ta1,tb1,pa1,pb1,pc1)
+       { (exp(-0.5*(((TEMP)-ta1)/tb1)^2)) * (exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) }
 ##################################
 # Temperature
 plot(qupr.run$BAI ~ rowMeans(qupr.run[,temp.col]), xlab="Mean Temp Mar-Oct", ylab="BAI (mm)")
@@ -346,7 +350,7 @@ dim(x.temp)
 y.temp <- temp.effect(x.temp, results$best_pars$ta1, results$best_pars$tb1)
 dim(y.temp)
 
-pdf( paste(run.label, " - Climate Temperature Effect.pdf", sep=""), width=12, height=9)
+pdf(file.path("Figures", paste(run.label, " - Climate Temperature Effect.pdf", sep="")), width=12, height=9)
 par(mfrow=c(2,3))
 for(i in 1:length(temp.col))
 	{	plot(x.temp[,i],y.temp[,i],ylim=c(0,1), xlab="Tavg (K)",ylab="Temp Effect",type="l",lwd=2, main=temp.col[i])
@@ -372,8 +376,8 @@ plot(qupr.run$BAI ~ rowSums(qupr.run[,precip.col]), xlab="Total Precip Mar-Oct",
 
 x.precip <- array(dim=c(100,length(temp.col.ind)))
 x.precip[1:100,] <- seq(0, 500, length.out=100)
-
-y.precip <- precip.effect(x.precip, results$best_pars$pa1, results$best_pars$pb1)
+flow.precip <- mean(qupr.run$flow, na.rm=T)
+y.precip <- precip.effect(x.precip, flow.precip, results$best_pars$pa1, results$best_pars$pb1, , results$best_pars$pc1)
 dim(y.precip)
 summary(y.precip)
 

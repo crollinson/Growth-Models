@@ -9,42 +9,35 @@
 ####################################################
 rm(list=ls())
 
+data_directory <- "~/CARCA/Growth-Models/Seasonal/"
+#memory.size(4024)
+setwd(data_directory)
 library(likelihood)
 
-# run.label <- "ACRU_Full_Season2"
+# run.label <- "ACRU_Full_Season"
 # load(file=paste( run.label, "_Results.Rdata", sep=""))
 
 run.label <- "ACRU_Full_Season"
 
-# #############
-# # Reading in Test Data & some formating
-# all.data <-read.csv("CARCA_CoreData_Tree_Plot_Tavg_Ppt_WideFormat.csv")
-# all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
-# all.data$BA.tree.cm2 <- all.data$BA.tree/100
-# all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
-# summary(all.data)
-# dim(all.data)
-
-# #############
-# # Subsetting just ACRU data
-# acru.all <- all.data[all.data$Spp=="ACRU", ]
-# summary(acru.all)
-# dim(acru.all)
-
-# # Subsetting only complete cases & a small range of years
-# acru.run <- acru.all[complete.cases(acru.all) & acru.all$Year>=1990 & acru.all$Year<=2011,]
-# summary(acru.run)
-# dim(acru.run)
-
-# write.csv(acru.run, "ACRU_AllSites_1990-2011.csv", row.names=F)
+#############
+# Reading in Test Data & some formating
+all.data <-read.csv("../RawInputs/CARCA_CoreData_Climate_Month_Wide.csv")
+all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
+all.data$BA.tree.cm2 <- all.data$BA.tree/100
+all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
+summary(all.data)
+dim(all.data)
 
 #############
-# Reading in Data
-acru.run <- read.csv("ACRU_AllSites_1990-2011.csv")
-summary(acru.run)
+# Subsetting just ACRU data
+acru.all <- all.data[all.data$Spp=="ACRU", ]
+summary(acru.all)
+dim(acru.all)
 
-# Loading previous runs
-#load(file="Test results for ACRU 4 - All Sites 1990-2011.Rdata")
+# Subsetting only complete cases & a small range of years
+acru.run <- acru.all[complete.cases(acru.all) & acru.all$Year>=1990 & acru.all$Year<=2011,]
+summary(acru.run)
+dim(acru.run)
 
 #############
 # Vector with names of Months of the year
@@ -86,6 +79,17 @@ length(temp.col.ind)
 
 # acru.run$Tavg.yr <- rowMeans(acru.run[,temp.col.ind])
 # acru.run$Precip.yr <- rowSums(acru.run[,precip.col.ind])
+
+write.csv(acru.run, "Inputs/ACRU_AllSites_1990-2011.csv", row.names=F)
+
+#############
+# Reading in Data
+acru.run <- read.csv("Inputs/ACRU_AllSites_1990-2011.csv")
+summary(acru.run)
+
+# Loading previous runs
+#load(file="Test results for ACRU 4 - All Sites 1990-2011.Rdata")
+
 
 ####################################################################################################################
 overall.model <- function(
@@ -156,21 +160,21 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=1, ab= 0.00198, gmax=10000,  	# Autogenic
-          ca=2000, cb=8.06568, cc= 0.034, cd=0.0016, ce=0, cf=27.28, cg=-798.6,  # Competition
-          ta1=c(325,	314,	256.5585,	267.8,	284.8,	319.1), 
-          tb1=c(72.2,	275.5,	17.6,		111.9,	337.6,	447.1),
-          pa1=c(8.47e-8, 172.7,	0.025,	82.38,	140.2,	258.6), 
-          pb1=c(189.9,	703,	138.3,	85.5,	104.2,	1623.7), 
-          pc1=0, 
+		  aa=1, ab=0.00554, gmax=10000,  	# Autogenic
+          ca=2000, cb=14.6, cc=4.98, cd=0.0122, ce=0, cf=1000, cg=-165.27,  # Competition
+          ta1=c(278.38,	264.81,	284.25,	314.92,	250.36,	250), 
+          tb1=c(266.04,	29.30,	489.61,	451.51,	449.48,	21.43),
+          pa1=c(27.23,	440.96,	492.98,	215.03,	19.55,	0.057), 
+          pb1=c(224.39,	1956.4,	638.42,	302.86,	725.79,	115.37), 
+          pc1=0.409, 
           # # ha=rep(0.5,3),  # Habitat
-          sd= 413.8)
+          sd=126.61)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
             BA.PLOT="BA.m2ha.plot.live", RS="RelBA",  # Competition
             TEMP = acru.run[,temp.col.ind], # hard-coded above
-            PRECIP = acru.run[,precip.col.ind], FLOW="flow.acc"
+            PRECIP = acru.run[,precip.col.ind], FLOW="flow"
             # TRANS="Site.Trans" # Habitat
             )
 
@@ -210,11 +214,11 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, acru.run, par_lo, par_hi, dnorm, "BAI", hessian = F, slimit=1.92, max_iter=50000)
+results <- anneal(overall.model, par, var, acru.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
 
-save(results,file=paste( run.label, "_Results.Rdata", sep=""))
+save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 
-write_results(results,paste( run.label, "_Results.txt", sep=""))
+write_results(results,file.path("Outputs", paste( run.label, "_Results.txt", sep="")))
 
 ## display some of the results in the console
 results$best_pars;
@@ -225,7 +229,7 @@ results$R2
 
 ####################################################################################################################
 ####################################################################################################################
-load(file=paste( run.label, "_Results.Rdata", sep=""))
+load(file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 
 
 # Looking at Residuals and Parameters
@@ -254,7 +258,7 @@ par(mar=c(5,5,4,2), mfrow=c(1,1))
 x <- seq(0,max(ceiling(results$source_data$BA.tree.cm2)),1)
 y <- autogenic.effect(x,results$best_pars$aa,results$best_pars$ab)
 
-pdf( paste(run.label, " - Autogenic Scalar.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Autogenic Scalar.pdf", sep="")))
 plot(x,y,ylim=c(0,1),xlab="Tree Basal Area (cm2)",ylab="Effect of Size on Growth",
      cex.axis=1.25,cex.lab=1.5,type="l",lwd=2,main=run.label)
 dev.off()
@@ -276,7 +280,7 @@ x <- seq(0,1,0.01)
 y <- size.effect(x,results$best_pars$ca, results$best_pars$cb,results$best_pars$cc)
 summary(y)
 
-pdf( paste(run.label, " - Competition Size Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Size Effect.pdf", sep="")))
 plot(x,y,xlab="Relative Size",ylab="Size Effect",type="l",lwd=2,
       cex.lab=1.5,cex.axis=1.25,main=run.label)
 #savePlot(file=paste("Competition Plot 1 ",run.label,".png",sep=""),type="png")
@@ -291,7 +295,7 @@ x <- seq(0,60,0.1)
 y <- comp.effect(x, results$best_pars$ce, results$best_pars$cf,results$best_pars$cg)
 summary(y)
 
-pdf( paste(run.label, " - Competition Competitive Effect.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Competitive Effect.pdf", sep="")))
 plot(x,y,ylim=c(0,1),xlab="Plot BA",ylab="Competitive Effect",type="l",lwd=2,
        cex.lab=1.5,cex.axis=1.25,main=run.label)
 dev.off()
@@ -302,7 +306,7 @@ dev.off()
 plot(BA.m2ha.plot~ RelBA, data=results$source_data)
 
 
-pdf( paste(run.label, " - Competition Response Scalar.pdf", sep=""))
+pdf(file.path("Figures", paste(run.label, " - Competition Response Scalar.pdf", sep="")))
 par(mar=c(5,5,4,2))
 colors <- c("red","orange","blue","cyan","green")
 x <- seq(0,1,0.01)
@@ -327,14 +331,14 @@ dev.off()
 temp.effect <- function(TEMP,ta1,tb1)
        { t(exp(-0.5*((t(TEMP)-ta1)/tb1)^2))  }
 
-precip.effect <- function(PRECIP,pa1,pb1)
-       { t(exp(-0.5*((t(PRECIP)-pa1)/pb1)^2)) }
+precip.effect <- function(PRECIP,FLOW,pa1,pb1,pc1)
+       { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) }
 
 # precip.effect <- function(PRECIP,pa1,pb1)
        # { (1/(1+((PRECIP)/pa1)^pb1))  }
 
-climate.effect <- function(TEMP,PRECIP,ta1,tb1,pa1,pb1)
-       { (exp(-0.5*(((TEMP)-ta1)/tb1)^2)) * (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
+climate.effect <- function(TEMP,PRECIP,FLOW,ta1,tb1,pa1,pb1,pc1)
+       { (exp(-0.5*(((TEMP)-ta1)/tb1)^2)) * (exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) }
 ##################################
 # Temperature
 plot(acru.run$BAI ~ rowMeans(acru.run[,temp.col]), xlab="Mean Temp Mar-Oct", ylab="BAI (mm)")
@@ -346,7 +350,7 @@ dim(x.temp)
 y.temp <- temp.effect(x.temp, results$best_pars$ta1, results$best_pars$tb1)
 dim(y.temp)
 
-pdf( paste(run.label, " - Climate Temperature Effect.pdf", sep=""), width=12, height=9)
+pdf(file.path("Figures", paste(run.label, " - Climate Temperature Effect.pdf", sep="")), width=12, height=9)
 par(mfrow=c(2,3))
 for(i in 1:length(temp.col))
 	{	plot(x.temp[,i],y.temp[,i],ylim=c(0,1), xlab="Tavg (K)",ylab="Temp Effect",type="l",lwd=2, main=temp.col[i])
@@ -372,8 +376,8 @@ plot(acru.run$BAI ~ rowSums(acru.run[,precip.col]), xlab="Total Precip Mar-Oct",
 
 x.precip <- array(dim=c(100,length(temp.col.ind)))
 x.precip[1:100,] <- seq(0, 500, length.out=100)
-
-y.precip <- precip.effect(x.precip, results$best_pars$pa1, results$best_pars$pb1)
+flow.precip <- mean(acru.run$flow, na.rm=T)
+y.precip <- precip.effect(x.precip, flow.precip, results$best_pars$pa1, results$best_pars$pb1, , results$best_pars$pc1)
 dim(y.precip)
 summary(y.precip)
 
