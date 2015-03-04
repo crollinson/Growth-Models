@@ -21,7 +21,7 @@ run.label <- "NYSY_Full_Ann"
 
 #############
 # Reading in Test Data & some formating
-all.data <-read.csv("../Raw Inputs/CARCA_CoreData_Climate_Annual.csv")
+all.data <-read.csv("../RawInputs/CARCA_CoreData_Climate_Annual.csv")
 all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
 all.data$BA.tree.cm2 <- all.data$BA.tree/100
 all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
@@ -282,131 +282,131 @@ dev.off()
 #savePlot(file=paste("Competition Plot 3 ",run.label,".png",sep=""),type="png")
 
 
-##################################
-temp.effect <- function(TEMP,ta1,tb1)
-       { (exp(-0.5*(((TEMP)-ta1)/tb1)^2))  }
-
-precip.effect <- function(PRECIP,pa1,pb1)
-       { (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
+# ##################################
+# temp.effect <- function(TEMP,ta1,tb1)
+       # { (exp(-0.5*(((TEMP)-ta1)/tb1)^2))  }
 
 # precip.effect <- function(PRECIP,pa1,pb1)
-       # { (1/(1+((PRECIP)/pa1)^pb1))  }
+       # { (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
 
-climate.effect <- function(TEMP,PRECIP,ta1,tb1,pa1,pb1)
-       { (exp(-0.5*(((TEMP)-ta1)/tb1)^2)) * (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
-##################################
-# Temperature
-plot(nysy.run$BAI ~ rowMeans(nysy.run[,temp.col]), xlab="Mean Temp Mar-Oct", ylab="BAI (mm)")
+# # precip.effect <- function(PRECIP,pa1,pb1)
+       # # { (1/(1+((PRECIP)/pa1)^pb1))  }
 
-# # x.temp <- array(dim=c(100,length(temp.col.ind)))
-# x.temp[1:100,] <- seq(250, 300, length.out=100)
-# dim(x.temp)
+# climate.effect <- function(TEMP,PRECIP,ta1,tb1,pa1,pb1)
+       # { (exp(-0.5*(((TEMP)-ta1)/tb1)^2)) * (exp(-0.5*(((PRECIP)-pa1)/pb1)^2)) }
+# ##################################
+# # Temperature
+# plot(nysy.run$BAI ~ rowMeans(nysy.run[,temp.col]), xlab="Mean Temp Mar-Oct", ylab="BAI (mm)")
 
+# # # x.temp <- array(dim=c(100,length(temp.col.ind)))
+# # x.temp[1:100,] <- seq(250, 300, length.out=100)
+# # dim(x.temp)
+
+# # y.temp <- temp.effect(x.temp, results$best_pars$ta1, results$best_pars$tb1)
+# # dim(y.temp)
+
+# # pdf( paste(run.label, " - Climate Temperature Effect.pdf", sep=""), width=12, height=9)
+# # par(mfrow=c(3,6))
+# # for(i in 1:length(temp.col))
+	# # {	plot(x.temp[,i],y.temp[,i],ylim=c(0,1), xlab="Tavg (K)",ylab="Temp Effect",type="l",lwd=2, main=temp.col[i])
+		# # abline(v=min(nysy.run[,temp.col[i]]), col="red")
+		# # abline(v=max(nysy.run[,temp.col[i]]), col="red")
+	# # }
+# # dev.off()
+
+# summary(rowMeans(nysy.run[,temp.col]))
+# x.temp <- seq(250, 300, length.out=100)
 # y.temp <- temp.effect(x.temp, results$best_pars$ta1, results$best_pars$tb1)
-# dim(y.temp)
 
-# pdf( paste(run.label, " - Climate Temperature Effect.pdf", sep=""), width=12, height=9)
-# par(mfrow=c(3,6))
-# for(i in 1:length(temp.col))
-	# {	plot(x.temp[,i],y.temp[,i],ylim=c(0,1), xlab="Tavg (K)",ylab="Temp Effect",type="l",lwd=2, main=temp.col[i])
-		# abline(v=min(nysy.run[,temp.col[i]]), col="red")
-		# abline(v=max(nysy.run[,temp.col[i]]), col="red")
-	# }
+# pdf(file.path("Figures", paste(run.label, " - Climate Temperature Effect.pdf", sep="")))
+# par(mfrow=c(1,1))
+# plot(x.temp, y.temp, type="l", lwd=2,ylim=c(0,1), xlab="Tavg (K)", ylab="Temp Effect")
+		# abline(v=min(rowMeans(nysy.run[,temp.col])), col="red")
+		# abline(v=max(rowMeans(nysy.run[,temp.col])), col="red")
 # dev.off()
 
-summary(rowMeans(nysy.run[,temp.col]))
-x.temp <- seq(250, 300, length.out=100)
-y.temp <- temp.effect(x.temp, results$best_pars$ta1, results$best_pars$tb1)
+# ##########
+# # Precipitation
+# plot(nysy.run$BAI ~ rowSums(nysy.run[,precip.col]), xlab="Total Precip Mar-Oct", ylab="BAI (mm)")
 
-pdf(file.path("Figures", paste(run.label, " - Climate Temperature Effect.pdf", sep="")))
-par(mfrow=c(1,1))
-plot(x.temp, y.temp, type="l", lwd=2,ylim=c(0,1), xlab="Tavg (K)", ylab="Temp Effect")
-		abline(v=min(rowMeans(nysy.run[,temp.col])), col="red")
-		abline(v=max(rowMeans(nysy.run[,temp.col])), col="red")
-dev.off()
+# # x .precip <- array(dim=c(100,length(temp.col.ind)))
+# # x.precip[1:100,] <- seq(0, 300, length.out=100)
 
-##########
-# Precipitation
-plot(nysy.run$BAI ~ rowSums(nysy.run[,precip.col]), xlab="Total Precip Mar-Oct", ylab="BAI (mm)")
+# # y.precip <- precip.effect(x.precip, results$best_pars$pa1, results$best_pars$pb1)
+# # dim(y.precip)
+# # summary(y.precip)
 
-# x .precip <- array(dim=c(100,length(temp.col.ind)))
-# x.precip[1:100,] <- seq(0, 300, length.out=100)
+# # pdf( paste(run.label, " - Climate Precipitation Effect.pdf", sep=""), width=12, height=9)
+# # par(mfrow=c(3,6))
+# # for(i in 1:length(temp.col))
+	# # {	plot(x.precip[,i],y.precip[,i], ylim=c(0,1), xlab="Precip (mm)", ylab="BAI", type="l", lwd=2, main=precip.col[i])
+		# # abline(v=min(nysy.run[,precip.col[i]]), col="red")
+		# # abline(v=max(nysy.run[,precip.col[i]]), col="red")
+	# # }
+# # dev.off()
 
+# x.precip <- seq(0, 2500, length.out=100)
 # y.precip <- precip.effect(x.precip, results$best_pars$pa1, results$best_pars$pb1)
-# dim(y.precip)
-# summary(y.precip)
 
-# pdf( paste(run.label, " - Climate Precipitation Effect.pdf", sep=""), width=12, height=9)
-# par(mfrow=c(3,6))
-# for(i in 1:length(temp.col))
-	# {	plot(x.precip[,i],y.precip[,i], ylim=c(0,1), xlab="Precip (mm)", ylab="BAI", type="l", lwd=2, main=precip.col[i])
-		# abline(v=min(nysy.run[,precip.col[i]]), col="red")
-		# abline(v=max(nysy.run[,precip.col[i]]), col="red")
-	# }
+# pdf(file.path("Figures", paste(run.label, " - Climate Precipitation Effect.pdf", sep="")))
+# plot(x.precip, y.precip, type="l", lwd=2, xlab="Precip (mm)", ylab="precip Effect", ylim=c(0,1))
+		# abline(v=min(rowSums(nysy.run[,precip.col])), col="red")
+		# abline(v=max(rowSums(nysy.run[,precip.col])), col="red")
+# summary(rowSums(nysy.run[,precip.col]))
+# summary(y.precip)
 # dev.off()
 
-x.precip <- seq(0, 2500, length.out=100)
-y.precip <- precip.effect(x.precip, results$best_pars$pa1, results$best_pars$pb1)
+# ##########
+# ##########
 
-pdf(file.path("Figures", paste(run.label, " - Climate Precipitation Effect.pdf", sep="")))
-plot(x.precip, y.precip, type="l", lwd=2, xlab="Precip (mm)", ylab="precip Effect", ylim=c(0,1))
-		abline(v=min(rowSums(nysy.run[,precip.col])), col="red")
-		abline(v=max(rowSums(nysy.run[,precip.col])), col="red")
-summary(rowSums(nysy.run[,precip.col]))
-summary(y.precip)
-dev.off()
-
-##########
-##########
-
-# # Data frame with mean temperature for each month in the column
-# x.temp <- array(dim=c(100,length(temp.col.ind)))
-# x.temp[1:100,] <- seq(250, 300, length.out=100)
-# dim(x.temp)
-# summary(x.temp)
+# # # Data frame with mean temperature for each month in the column
+# # x.temp <- array(dim=c(100,length(temp.col.ind)))
+# # x.temp[1:100,] <- seq(250, 300, length.out=100)
+# # dim(x.temp)
+# # summary(x.temp)
 
 
-# # Data frame with mean precip for each month in the column
-# x.precip.mean <- data.frame(array(dim=c(100,length(precip.col.ind))))
-# names(x.precip.mean) <- precip.col
-# for(i in unique(precip.col))
-	# { x.precip.mean[,i] <- mean(nysy.run[,i]) }
-# summary(x.precip.mean)
+# # # Data frame with mean precip for each month in the column
+# # x.precip.mean <- data.frame(array(dim=c(100,length(precip.col.ind))))
+# # names(x.precip.mean) <- precip.col
+# # for(i in unique(precip.col))
+	# # { x.precip.mean[,i] <- mean(nysy.run[,i]) }
+# # summary(x.precip.mean)
 
-# x.precip.mean2 <- data.frame(array(dim=c(100,length(precip.col.ind))))
-# names(x.precip.mean2) <- precip.col
-# for(i in unique(precip.col))
-	# { x.precip.mean2[,i] <- mean(nysy.run[,i])-50 }
-# summary(x.precip.mean2)
+# # x.precip.mean2 <- data.frame(array(dim=c(100,length(precip.col.ind))))
+# # names(x.precip.mean2) <- precip.col
+# # for(i in unique(precip.col))
+	# # { x.precip.mean2[,i] <- mean(nysy.run[,i])-50 }
+# # summary(x.precip.mean2)
 
-# x.precip.mean3 <- data.frame(array(dim=c(100,length(precip.col.ind))))
-# names(x.precip.mean3) <- precip.col
-# for(i in unique(precip.col))
-	# { x.precip.mean3[,i] <- mean(nysy.run[,i])+50 }
-# summary(x.precip.mean3)
+# # x.precip.mean3 <- data.frame(array(dim=c(100,length(precip.col.ind))))
+# # names(x.precip.mean3) <- precip.col
+# # for(i in unique(precip.col))
+	# # { x.precip.mean3[,i] <- mean(nysy.run[,i])+50 }
+# # summary(x.precip.mean3)
 
-climate.effect1 <- climate.effect(TEMP=x.temp, PRECIP=500, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
-summary(climate.effect1)
+# climate.effect1 <- climate.effect(TEMP=x.temp, PRECIP=500, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
+# summary(climate.effect1)
 
-climate.effect2 <- climate.effect(TEMP=x.temp, PRECIP=1000, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
-summary(climate.effect2)
+# climate.effect2 <- climate.effect(TEMP=x.temp, PRECIP=1000, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
+# summary(climate.effect2)
 
-climate.effect3 <- climate.effect(TEMP=x.temp, PRECIP=1500, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
-summary(climate.effect3)
+# climate.effect3 <- climate.effect(TEMP=x.temp, PRECIP=1500, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
+# summary(climate.effect3)
 
-climate.effect4 <- climate.effect(TEMP=x.temp, PRECIP=2000, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
-summary(climate.effect3)
+# climate.effect4 <- climate.effect(TEMP=x.temp, PRECIP=2000, results$best_par$ta1, results$best_par$tb1, results$best_par$pa1, results$best_par$pb1)
+# summary(climate.effect3)
 
-pdf(file.path("Figures", paste(run.label, " - Climate Response Temperature.pdf", sep="")))
-par(mar=c(5,5,4,1))
-	plot(x.temp,climate.effect1,ylim=c(0,1), xlab="Tavg (K)",ylab="BAI",type="l",lwd=3, col="red", cex.axis=1.25, cex.lab=1.5, cex.main=2, font.lab=2, main="Climate Effect")
+# pdf(file.path("Figures", paste(run.label, " - Climate Response Temperature.pdf", sep="")))
+# par(mar=c(5,5,4,1))
+	# plot(x.temp,climate.effect1,ylim=c(0,1), xlab="Tavg (K)",ylab="BAI",type="l",lwd=3, col="red", cex.axis=1.25, cex.lab=1.5, cex.main=2, font.lab=2, main="Climate Effect")
 
-	lines(x.temp, climate.effect2, type="l", lwd=3, col="orange")
-	lines(x.temp, climate.effect3, type="l", lwd=3, col="green3")
-	lines(x.temp, climate.effect4, type="l", lwd=3, col="blue")
+	# lines(x.temp, climate.effect2, type="l", lwd=3, col="orange")
+	# lines(x.temp, climate.effect3, type="l", lwd=3, col="green3")
+	# lines(x.temp, climate.effect4, type="l", lwd=3, col="blue")
 
-	abline(v=min(nysy.run[,temp.col]), col="black", lty="dashed")
-	abline(v=max(nysy.run[,temp.col]), col="black", lty="dashed")			
-	legend("bottomleft", legend=c("500", "1000", "1500", "2000"), col=c("red", "orange", "green3", "blue"), lwd=3, bty="n", cex=1.25)
-dev.off()
+	# abline(v=min(nysy.run[,temp.col]), col="black", lty="dashed")
+	# abline(v=max(nysy.run[,temp.col]), col="black", lty="dashed")			
+	# legend("bottomleft", legend=c("500", "1000", "1500", "2000"), col=c("red", "orange", "green3", "blue"), lwd=3, bty="n", cex=1.25)
+# dev.off()
 
