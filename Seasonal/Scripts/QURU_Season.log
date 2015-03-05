@@ -1,0 +1,1188 @@
+
+R version 2.15.3 (2013-03-01) -- "Security Blanket"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ####################################################
+> # QURU MODEL Autogenic x Competition x (Temp x Precip) :
+> # Autogenic: Size/Age logistic scalar with Max potential growth for absolute values
+> # Competition: Relative Size, Plot BA Scalars
+> # Climate: 3-month means, prev Jun - current Nov
+> #	-- Temp: Gaussian
+> #	-- Precip: with flow Gaussian
+> #
+> ####################################################
+> rm(list=ls())
+> 
+> data_directory <- "~/CARCA/Growth-Models/Seasonal/"
+> #memory.size(4024)
+> setwd(data_directory)
+> library(likelihood)
+Loading required package: nlme
+> 
+> # run.label <- "QURU_Full_Season"
+> # load(file=paste( run.label, "_Results.Rdata", sep=""))
+> 
+> run.label <- "QURU_Full_Season"
+> 
+> #############
+> # Reading in Test Data & some formating
+> all.data <-read.csv("../RawInputs/CARCA_CoreData_Climate_Month_Wide.csv")
+> all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
+> all.data$BA.tree.cm2 <- all.data$BA.tree/100
+> all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
+> summary(all.data)
+      Year          PlotID           TreeID        Site       Trans     
+ Min.   :1771   HNKC2  :  8505   BLDA101:   243   BLD:62694   A: 88452  
+ 1st Qu.:1831   FLTA1  :  7776   BLDA102:   243   FLT:49329   B: 93798  
+ Median :1892   HIKA1  :  7290   BLDA103:   243   HIK:48357   C:106434  
+ Mean   :1892   HNKB2  :  7290   BLDA104:   243   HNK:43983             
+ 3rd Qu.:1953   HNKA3  :  7047   BLDA105:   243   IRN:52245             
+ Max.   :2013   BLDA2  :  6804   BLDA106:   243   MOR:32076             
+                (Other):243972   (Other):287226                         
+      Plot            BAI                 CoreID       Pith      
+ Min.   :1.000   Min.   :    0.00   BLDA101HI:   243   N:211896  
+ 1st Qu.:1.000   1st Qu.:   84.36   BLDA102HI:   243   Y: 76788  
+ Median :2.000   Median :  244.79   BLDA103HI:   243             
+ Mean   :2.265   Mean   :  459.83   BLDA104HI:   243             
+ 3rd Qu.:3.000   3rd Qu.:  589.69   BLDA105HI:   243             
+ Max.   :4.000   Max.   :18648.71   BLDA106HI:   243             
+                 NA's   :202009     (Other)  :287226             
+    Pith.Yr          Inner          Outer      Bark       Use       
+ Min.   :1756    Min.   :1762   Min.   :1990   N:  6318   N:  4617  
+ 1st Qu.:1917    1st Qu.:1923   1st Qu.:2012   Y:282366   Y:284067  
+ Median :1933    Median :1938   Median :2012                        
+ Mean   :1936    Mean   :1939   Mean   :2012                        
+ 3rd Qu.:1953    3rd Qu.:1955   3rd Qu.:2012                        
+ Max.   :2008    Max.   :2009   Max.   :2013                        
+ NA's   :60021                                                      
+                        Notes         Pith.offset         Tree      
+ poor corr w/ master       :   972   Min.   : 0.00   Min.   : 1.00  
+ poor correlation w/ master:   972   1st Qu.: 1.00   1st Qu.:10.00  
+ 1977 missing              :   486   Median : 2.00   Median :18.50  
+ 1986 missing              :   486   Mean   : 3.35   Mean   :20.86  
+ 1999 missing              :   486   3rd Qu.: 5.00   3rd Qu.:30.00  
+ (Other)                   : 14094   Max.   :20.00   Max.   :84.00  
+ NA's                      :271188   NA's   :60021                  
+      Spp              Genus         Canopy         Live       
+ ACRU   :71199   Quercus  :111294   C   :148230   DEAD:   243  
+ QUPR   :50787   Acer     : 85779   D   :  8748   LIVE:288441  
+ QURU   :43740   Nyssa    : 38880   I   : 86022                
+ NYSY   :38880   Magnolia : 11421   U   : 45441                
+ ACSA   :14580   Betula   :  8262   NA's:   243                
+ MAAC   : 9720   Sassafras:  7776                              
+ (Other):59778   (Other)  : 25272                              
+      Age            BA.m2ha          BAI.filled          BA.tree      
+ Min.   :  0.00   Min.   : 0.0000   Min.   :    0.00   Min.   :     0  
+ 1st Qu.: 19.00   1st Qu.: 0.0000   1st Qu.:    0.00   1st Qu.:     0  
+ Median : 40.00   Median : 0.0000   Median :    0.00   Median :     0  
+ Mean   : 44.55   Mean   : 0.1771   Mean   :  149.04   Mean   :  6106  
+ 3rd Qu.: 64.00   3rd Qu.: 0.0615   3rd Qu.:   74.84   3rd Qu.:  2007  
+ Max.   :256.00   Max.   :11.8597   Max.   :18648.71   Max.   :462177  
+ NA's   :195231   NA's   :1047      NA's   :985        NA's   :1047    
+     Stems          Density.Ha     BAI.filled.plot      BA.plot       
+ Min.   :0.0000   Min.   : 0.000   Min.   :    0.0   Min.   :    0.0  
+ 1st Qu.:0.0000   1st Qu.: 0.000   1st Qu.:    0.0   1st Qu.:    0.0  
+ Median :0.0000   Median : 0.000   Median :  904.8   Median :  581.2  
+ Mean   :0.3191   Mean   : 9.728   Mean   : 3899.5   Mean   : 2063.0  
+ 3rd Qu.:1.0000   3rd Qu.:31.831   3rd Qu.: 6247.5   3rd Qu.: 2866.9  
+ Max.   :1.0000   Max.   :49.736   Max.   :38677.4   Max.   :23212.2  
+                                   NA's   :1500      NA's   :1500     
+  BA.m2ha.plot     Density.ha.plot     Stems.plot     BAI.m2ha.plot   
+ Min.   : 0.0000   Min.   :   0.00   Min.   : 0.000   Min.   :0.0000  
+ 1st Qu.: 0.0000   1st Qu.:   0.00   1st Qu.: 0.000   1st Qu.:0.0000  
+ Median : 0.0705   Median :  63.66   Median : 2.000   Median :0.0274  
+ Mean   : 3.4704   Mean   : 268.53   Mean   : 8.898   Mean   :0.1135  
+ 3rd Qu.: 4.3534   3rd Qu.: 509.30   3rd Qu.:18.000   3rd Qu.:0.1935  
+ Max.   :35.8804   Max.   :1432.39   Max.   :45.000   Max.   :1.0485  
+ NA's   :1500      NA's   :1500      NA's   :1500     NA's   :1500    
+ BA.m2ha.plot.live     RelBA          Site.Trans        Latitude     
+ Min.   : 0.000    Min.   :0.00     BLDC   : 23814   Min.   :36.75   
+ 1st Qu.: 0.000    1st Qu.:0.05     IRNC   : 20898   1st Qu.:37.24   
+ Median : 1.116    Median :0.17     HIKC   : 20169   Median :37.91   
+ Mean   : 5.122    Mean   :0.30     BLDA   : 19926   Mean   :37.74   
+ 3rd Qu.: 6.584    3rd Qu.:0.46     BLDB   : 18954   3rd Qu.:38.32   
+ Max.   :57.620    Max.   :1.00     IRNB   : 18711   Max.   :38.58   
+ NA's   :985       NA's   :199115   (Other):166212   NA's   :154440  
+   Longitude           elev             flow             TPI        
+ Min.   :-81.31   Min.   : 666.9   Min.   :0.01     Min.   :-0.23   
+ 1st Qu.:-80.86   1st Qu.: 843.7   1st Qu.:0.01     1st Qu.:-0.10   
+ Median :-79.85   Median : 952.4   Median :0.03     Median :-0.03   
+ Mean   :-80.10   Mean   : 955.7   Mean   :0.12     Mean   : 0.01   
+ 3rd Qu.:-79.22   3rd Qu.:1098.3   3rd Qu.:0.06     3rd Qu.: 0.15   
+ Max.   :-79.15   Max.   :1256.7   Max.   :1.42     Max.   : 0.30   
+ NA's   :154440   NA's   :154440   NA's   :154440   NA's   :154440  
+    Tavg.X01         Tavg.X02         Tavg.X03         Tavg.X04     
+ Min.   :260.1    Min.   :262.9    Min.   :264.5    Min.   :274.6   
+ 1st Qu.:269.2    1st Qu.:270.3    1st Qu.:274.7    1st Qu.:280.5   
+ Median :271.3    Median :272.4    Median :276.8    Median :282.4   
+ Mean   :271.2    Mean   :272.2    Mean   :276.7    Mean   :282.2   
+ 3rd Qu.:273.2    3rd Qu.:274.2    3rd Qu.:278.8    3rd Qu.:284.0   
+ Max.   :280.5    Max.   :278.5    Max.   :285.0    Max.   :287.7   
+ NA's   :154440   NA's   :154440   NA's   :154440   NA's   :154440  
+    Tavg.X05         Tavg.X06         Tavg.X07         Tavg.X08     
+ Min.   :279.8    Min.   :284.9    Min.   :287.3    Min.   :285.8   
+ 1st Qu.:285.8    1st Qu.:290.0    1st Qu.:292.1    1st Qu.:291.3   
+ Median :287.5    Median :291.4    Median :293.4    Median :292.7   
+ Mean   :287.3    Mean   :291.1    Mean   :293.1    Mean   :292.5   
+ 3rd Qu.:289.0    3rd Qu.:292.5    3rd Qu.:294.3    3rd Qu.:293.8   
+ Max.   :292.2    Max.   :296.2    Max.   :297.1    Max.   :297.3   
+ NA's   :154440   NA's   :154440   NA's   :154440   NA's   :154440  
+    Tavg.X09         Tavg.X10         Tavg.X11         Tavg.X12     
+ Min.   :282.8    Min.   :276.6    Min.   :271.5    Min.   :263.8   
+ 1st Qu.:288.1    1st Qu.:282.2    1st Qu.:276.5    1st Qu.:271.3   
+ Median :289.5    Median :283.7    Median :277.8    Median :273.1   
+ Mean   :289.3    Mean   :283.5    Mean   :277.8    Mean   :273.0   
+ 3rd Qu.:290.7    3rd Qu.:285.0    3rd Qu.:279.1    3rd Qu.:274.8   
+ Max.   :294.2    Max.   :288.6    Max.   :283.7    Max.   :279.9   
+ NA's   :154440   NA's   :154440   NA's   :154440   NA's   :154440  
+ Tavg.X01.prev    Tavg.X02.prev    Tavg.X03.prev    Tavg.X04.prev   
+ Min.   :260.1    Min.   :262.9    Min.   :264.5    Min.   :274.6   
+ 1st Qu.:269.2    1st Qu.:270.3    1st Qu.:274.7    1st Qu.:280.5   
+ Median :271.3    Median :272.4    Median :276.8    Median :282.4   
+ Mean   :271.2    Mean   :272.1    Mean   :276.6    Mean   :282.2   
+ 3rd Qu.:273.2    3rd Qu.:274.2    3rd Qu.:278.7    3rd Qu.:284.0   
+ Max.   :280.5    Max.   :278.5    Max.   :285.0    Max.   :287.7   
+ NA's   :155628   NA's   :155628   NA's   :155628   NA's   :155628  
+ Tavg.X05.prev    Tavg.X06.prev    Tavg.X07.prev    Tavg.X08.prev   
+ Min.   :279.8    Min.   :284.9    Min.   :287.3    Min.   :285.8   
+ 1st Qu.:285.8    1st Qu.:290.0    1st Qu.:292.1    1st Qu.:291.3   
+ Median :287.5    Median :291.4    Median :293.3    Median :292.7   
+ Mean   :287.3    Mean   :291.1    Mean   :293.1    Mean   :292.5   
+ 3rd Qu.:288.9    3rd Qu.:292.5    3rd Qu.:294.2    3rd Qu.:293.8   
+ Max.   :292.2    Max.   :296.2    Max.   :297.1    Max.   :297.3   
+ NA's   :155628   NA's   :155628   NA's   :155628   NA's   :155628  
+ Tavg.X09.prev    Tavg.X10.prev    Tavg.X11.prev    Tavg.X12.prev   
+ Min.   :282.8    Min.   :276.6    Min.   :271.5    Min.   :263.8   
+ 1st Qu.:288.1    1st Qu.:282.2    1st Qu.:276.5    1st Qu.:271.2   
+ Median :289.5    Median :283.7    Median :277.8    Median :273.1   
+ Mean   :289.3    Mean   :283.5    Mean   :277.8    Mean   :272.9   
+ 3rd Qu.:290.7    3rd Qu.:285.0    3rd Qu.:279.1    3rd Qu.:274.8   
+ Max.   :294.2    Max.   :288.6    Max.   :283.7    Max.   :279.9   
+ NA's   :155628   NA's   :155628   NA's   :155628   NA's   :155628  
+   Precip.X01       Precip.X02       Precip.X03       Precip.X04    
+ Min.   :  9.06   Min.   :  7.21   Min.   :  0.15   Min.   : 14.74  
+ 1st Qu.: 56.47   1st Qu.: 49.54   1st Qu.: 70.19   1st Qu.: 61.82  
+ Median : 77.95   Median : 71.53   Median : 95.96   Median : 87.82  
+ Mean   : 83.89   Mean   : 75.98   Mean   : 99.47   Mean   : 91.25  
+ 3rd Qu.:102.79   3rd Qu.: 97.05   3rd Qu.:122.77   3rd Qu.:113.90  
+ Max.   :276.20   Max.   :209.15   Max.   :272.97   Max.   :238.54  
+ NA's   :154440   NA's   :154440   NA's   :154440   NA's   :154440  
+   Precip.X05       Precip.X06       Precip.X07       Precip.X08    
+ Min.   : 19.83   Min.   : 14.62   Min.   : 27.43   Min.   : 21.48  
+ 1st Qu.: 74.09   1st Qu.: 74.26   1st Qu.: 89.65   1st Qu.: 68.85  
+ Median :104.65   Median :100.85   Median :112.71   Median : 95.89  
+ Mean   :106.44   Mean   :107.63   Mean   :119.43   Mean   :105.77  
+ 3rd Qu.:135.01   3rd Qu.:131.03   3rd Qu.:142.94   3rd Qu.:129.40  
+ Max.   :266.04   Max.   :296.69   Max.   :423.43   Max.   :421.09  
+ NA's   :154440   NA's   :154440   NA's   :154440   NA's   :154440  
+   Precip.X09       Precip.X10       Precip.X11       Precip.X12    
+ Min.   :  2.37   Min.   :  1.06   Min.   :  9.25   Min.   :  2.49  
+ 1st Qu.: 52.19   1st Qu.: 44.08   1st Qu.: 45.03   1st Qu.: 56.20  
+ Median : 79.54   Median : 73.11   Median : 71.98   Median : 75.57  
+ Mean   : 90.54   Mean   : 82.99   Mean   : 76.45   Mean   : 82.37  
+ 3rd Qu.:117.18   3rd Qu.:114.42   3rd Qu.:100.25   3rd Qu.:103.91  
+ Max.   :324.42   Max.   :319.10   Max.   :354.36   Max.   :252.11  
+ NA's   :154440   NA's   :154440   NA's   :154440   NA's   :154440  
+ Precip.X01.prev  Precip.X02.prev  Precip.X03.prev  Precip.X04.prev 
+ Min.   :  9.06   Min.   :  7.21   Min.   :  0.15   Min.   : 14.74  
+ 1st Qu.: 56.43   1st Qu.: 49.65   1st Qu.: 70.01   1st Qu.: 62.00  
+ Median : 77.95   Median : 71.83   Median : 95.76   Median : 87.89  
+ Mean   : 83.96   Mean   : 76.17   Mean   : 99.26   Mean   : 91.32  
+ 3rd Qu.:103.33   3rd Qu.: 97.59   3rd Qu.:122.69   3rd Qu.:114.66  
+ Max.   :276.20   Max.   :209.15   Max.   :272.97   Max.   :238.54  
+ NA's   :155628   NA's   :155628   NA's   :155628   NA's   :155628  
+ Precip.X05.prev  Precip.X06.prev  Precip.X07.prev  Precip.X08.prev 
+ Min.   : 19.83   Min.   : 14.62   Min.   : 27.43   Min.   : 21.48  
+ 1st Qu.: 73.88   1st Qu.: 74.67   1st Qu.: 89.53   1st Qu.: 68.67  
+ Median :104.37   Median :101.25   Median :112.71   Median : 95.82  
+ Mean   :106.28   Mean   :108.04   Mean   :119.47   Mean   :105.70  
+ 3rd Qu.:134.94   3rd Qu.:131.58   3rd Qu.:143.14   3rd Qu.:129.38  
+ Max.   :266.04   Max.   :296.69   Max.   :423.43   Max.   :421.09  
+ NA's   :155628   NA's   :155628   NA's   :155628   NA's   :155628  
+ Precip.X09.prev  Precip.X10.prev  Precip.X11.prev  Precip.X12.prev 
+ Min.   :  2.37   Min.   :  1.06   Min.   :  9.25   Min.   :  2.49  
+ 1st Qu.: 51.94   1st Qu.: 43.92   1st Qu.: 45.68   1st Qu.: 56.30  
+ Median : 79.03   Median : 73.60   Median : 72.17   Median : 76.78  
+ Mean   : 90.18   Mean   : 83.27   Mean   : 76.91   Mean   : 82.60  
+ 3rd Qu.:115.57   3rd Qu.:114.60   3rd Qu.:100.41   3rd Qu.:104.91  
+ Max.   :324.42   Max.   :319.10   Max.   :354.36   Max.   :252.11  
+ NA's   :155628   NA's   :155628   NA's   :155628   NA's   :155628  
+  BA.tree.cm2     
+ Min.   :   0.00  
+ 1st Qu.:   0.00  
+ Median :   0.00  
+ Mean   :  61.06  
+ 3rd Qu.:  20.07  
+ Max.   :4621.77  
+ NA's   :1047     
+> dim(all.data)
+[1] 288684     90
+> 
+> #############
+> # Subsetting just QURU data
+> quru.all <- all.data[all.data$Spp=="QURU", ]
+> summary(quru.all)
+      Year          PlotID          TreeID       Site       Trans    
+ Min.   :1771   BLDA1  : 4860   BLDA101:  243   BLD:15309   A:28917  
+ 1st Qu.:1831   BLDA2  : 3645   BLDA102:  243   FLT: 8262   B: 8262  
+ Median :1892   FLTA1  : 2673   BLDA103:  243   HIK: 8505   C: 6561  
+ Mean   :1892   HIKA1  : 2430   BLDA104:  243   HNK: 3402            
+ 3rd Qu.:1953   HIKA2  : 2430   BLDA105:  243   IRN: 6075            
+ Max.   :2013   BLDA3  : 2187   BLDA106:  243   MOR: 2187            
+                (Other):25515   (Other):42282                        
+      Plot            BAI               CoreID      Pith         Pith.Yr     
+ Min.   :1.000   Min.   :   0.0   BLDA101HI:  243   N:37179   Min.   :1791   
+ 1st Qu.:1.000   1st Qu.: 300.2   BLDA102HI:  243   Y: 6561   1st Qu.:1916   
+ Median :2.000   Median : 587.3   BLDA103HI:  243             Median :1932   
+ Mean   :2.044   Mean   : 848.8   BLDA104HI:  243             Mean   :1928   
+ 3rd Qu.:3.000   3rd Qu.:1075.1   BLDA105HI:  243             3rd Qu.:1936   
+ Max.   :4.000   Max.   :9918.1   BLDA106HI:  243             Max.   :1979   
+                 NA's   :29331    (Other)  :42282             NA's   :10206  
+     Inner          Outer      Bark      Use      
+ Min.   :1794   Min.   :2012   N:  486   N: 1215  
+ 1st Qu.:1924   1st Qu.:2012   Y:43254   Y:42525  
+ Median :1936   Median :2012                      
+ Mean   :1932   Mean   :2012                      
+ 3rd Qu.:1944   3rd Qu.:2012                      
+ Max.   :1982   Max.   :2013                      
+                                                  
+                                                    Notes      
+ poor correlation with master                          :  486  
+ actually lo core, but this one measured because longer:  243  
+ break at 1931, 2 missing rings                        :  243  
+ cores reversed?                                       :  243  
+ not sure of pith est                                  :  243  
+ (Other)                                               : 1215  
+ NA's                                                  :41067  
+  Pith.offset          Tree            Spp             Genus       Canopy   
+ Min.   : 1.000   Min.   : 1.00   QURU   :43740   Quercus :43740   C:35478  
+ 1st Qu.: 2.000   1st Qu.: 6.00   ACRU   :    0   Acer    :    0   D: 2673  
+ Median : 4.000   Median :13.00   ACSA   :    0   Betula  :    0   I: 4617  
+ Mean   : 5.043   Mean   :16.35   BELE   :    0   Carya   :    0   U:  972  
+ 3rd Qu.: 7.000   3rd Qu.:23.00   BEPA   :    0   Castanea:    0            
+ Max.   :18.000   Max.   :68.00   CADE   :    0   Cornus  :    0            
+ NA's   :10206                    (Other):    0   (Other) :    0            
+   Live            Age            BA.m2ha         BAI.filled    
+ DEAD:    0   Min.   :  0.00   Min.   :0.0000   Min.   :   0.0  
+ LIVE:43740   1st Qu.: 21.00   1st Qu.:0.0000   1st Qu.:   0.0  
+              Median : 43.00   Median :0.0000   Median :   0.0  
+              Mean   : 46.39   Mean   :0.3264   Mean   : 301.4  
+              3rd Qu.: 66.00   3rd Qu.:0.2355   3rd Qu.: 354.1  
+              Max.   :221.00   Max.   :8.6278   Max.   :9918.1  
+              NA's   :28081    NA's   :157      NA's   :146     
+    BA.tree           Stems          Density.Ha    BAI.filled.plot  
+ Min.   :     0   Min.   :0.0000   Min.   : 0.00   Min.   :    0.0  
+ 1st Qu.:     0   1st Qu.:0.0000   1st Qu.: 0.00   1st Qu.:    0.0  
+ Median :     0   Median :0.0000   Median : 0.00   Median :  771.4  
+ Mean   : 11887   Mean   :0.3569   Mean   :10.54   Mean   : 4288.4  
+ 3rd Qu.:  8197   3rd Qu.:1.0000   3rd Qu.:31.83   3rd Qu.: 7726.8  
+ Max.   :462177   Max.   :1.0000   Max.   :49.74   Max.   :38677.4  
+ NA's   :157                                       NA's   :60       
+    BA.plot       BA.m2ha.plot      Density.ha.plot     Stems.plot    
+ Min.   :    0   Min.   : 0.00000   Min.   :   0.00   Min.   : 0.000  
+ 1st Qu.:    0   1st Qu.: 0.00000   1st Qu.:   0.00   1st Qu.: 0.000  
+ Median :  471   Median : 0.03597   Median :  56.59   Median : 2.000  
+ Mean   : 2182   Mean   : 3.93044   Mean   : 238.22   Mean   : 8.236  
+ 3rd Qu.: 3059   3rd Qu.: 5.13052   3rd Qu.: 445.63   3rd Qu.:16.000  
+ Max.   :23212   Max.   :35.88040   Max.   :1432.39   Max.   :45.000  
+ NA's   :60      NA's   :60         NA's   :60        NA's   :60      
+ BAI.m2ha.plot     BA.m2ha.plot.live     RelBA         Site.Trans   
+ Min.   :0.00000   Min.   : 0.000    Min.   :0.000   BLDA   :12879  
+ 1st Qu.:0.00000   1st Qu.: 0.000    1st Qu.:0.177   HIKA   : 6804  
+ Median :0.02069   Median : 1.020    Median :0.367   FLTA   : 3888  
+ Mean   :0.11888   Mean   : 6.683    Mean   :0.440   IRNA   : 2916  
+ 3rd Qu.:0.23251   3rd Qu.: 8.984    3rd Qu.:0.673   FLTB   : 2187  
+ Max.   :1.04853   Max.   :57.620    Max.   :1.000   FLTC   : 2187  
+ NA's   :60        NA's   :146       NA's   :28578   (Other):12879  
+    Latitude       Longitude           elev             flow      
+ Min.   :36.75   Min.   :-81.31   Min.   : 666.9   Min.   :0.006  
+ 1st Qu.:37.24   1st Qu.:-80.86   1st Qu.:1001.9   1st Qu.:0.009  
+ Median :37.92   Median :-79.85   Median :1098.3   Median :0.013  
+ Mean   :37.78   Mean   :-80.07   Mean   :1048.8   Mean   :0.073  
+ 3rd Qu.:38.32   3rd Qu.:-79.24   3rd Qu.:1131.5   3rd Qu.:0.032  
+ Max.   :38.57   Max.   :-79.15   Max.   :1256.7   Max.   :1.419  
+ NA's   :23400   NA's   :23400    NA's   :23400    NA's   :23400  
+      TPI            Tavg.X01        Tavg.X02        Tavg.X03    
+ Min.   :-0.234   Min.   :260.1   Min.   :262.9   Min.   :264.5  
+ 1st Qu.:-0.030   1st Qu.:269.4   1st Qu.:270.5   1st Qu.:275.2  
+ Median : 0.145   Median :271.3   Median :272.4   Median :277.1  
+ Mean   : 0.094   Mean   :271.2   Mean   :272.2   Mean   :277.0  
+ 3rd Qu.: 0.180   3rd Qu.:273.1   3rd Qu.:274.0   3rd Qu.:278.9  
+ Max.   : 0.300   Max.   :280.3   Max.   :278.2   Max.   :285.0  
+ NA's   :23400    NA's   :23400   NA's   :23400   NA's   :23400  
+    Tavg.X04        Tavg.X05        Tavg.X06        Tavg.X07    
+ Min.   :274.6   Min.   :279.8   Min.   :285.0   Min.   :287.3  
+ 1st Qu.:281.1   1st Qu.:286.2   1st Qu.:290.1   1st Qu.:292.3  
+ Median :282.9   Median :287.9   Median :291.5   Median :293.4  
+ Mean   :282.6   Mean   :287.5   Mean   :291.2   Mean   :293.1  
+ 3rd Qu.:284.3   3rd Qu.:289.2   3rd Qu.:292.6   3rd Qu.:294.2  
+ Max.   :287.7   Max.   :292.2   Max.   :296.2   Max.   :297.1  
+ NA's   :23400   NA's   :23400   NA's   :23400   NA's   :23400  
+    Tavg.X08        Tavg.X09        Tavg.X10        Tavg.X11    
+ Min.   :285.8   Min.   :282.8   Min.   :276.7   Min.   :271.5  
+ 1st Qu.:291.6   1st Qu.:288.4   1st Qu.:282.6   1st Qu.:276.5  
+ Median :292.9   Median :289.7   Median :283.8   Median :277.7  
+ Mean   :292.6   Mean   :289.5   Mean   :283.7   Mean   :277.7  
+ 3rd Qu.:293.8   3rd Qu.:290.8   3rd Qu.:284.9   3rd Qu.:279.0  
+ Max.   :297.3   Max.   :294.2   Max.   :288.6   Max.   :283.5  
+ NA's   :23400   NA's   :23400   NA's   :23400   NA's   :23400  
+    Tavg.X12     Tavg.X01.prev   Tavg.X02.prev   Tavg.X03.prev  
+ Min.   :263.8   Min.   :260.1   Min.   :262.9   Min.   :264.5  
+ 1st Qu.:271.2   1st Qu.:269.4   1st Qu.:270.4   1st Qu.:275.2  
+ Median :273.0   Median :271.3   Median :272.3   Median :277.1  
+ Mean   :272.9   Mean   :271.2   Mean   :272.1   Mean   :276.9  
+ 3rd Qu.:274.6   3rd Qu.:273.1   3rd Qu.:274.0   3rd Qu.:278.9  
+ Max.   :279.7   Max.   :280.3   Max.   :278.2   Max.   :285.0  
+ NA's   :23400   NA's   :23580   NA's   :23580   NA's   :23580  
+ Tavg.X04.prev   Tavg.X05.prev   Tavg.X06.prev   Tavg.X07.prev  
+ Min.   :274.6   Min.   :279.8   Min.   :285.0   Min.   :287.3  
+ 1st Qu.:281.1   1st Qu.:286.2   1st Qu.:290.1   1st Qu.:292.3  
+ Median :282.9   Median :287.9   Median :291.5   Median :293.4  
+ Mean   :282.6   Mean   :287.5   Mean   :291.3   Mean   :293.1  
+ 3rd Qu.:284.3   3rd Qu.:289.1   3rd Qu.:292.6   3rd Qu.:294.2  
+ Max.   :287.7   Max.   :292.2   Max.   :296.2   Max.   :297.1  
+ NA's   :23580   NA's   :23580   NA's   :23580   NA's   :23580  
+ Tavg.X08.prev   Tavg.X09.prev   Tavg.X10.prev   Tavg.X11.prev  
+ Min.   :285.8   Min.   :282.8   Min.   :276.7   Min.   :271.5  
+ 1st Qu.:291.6   1st Qu.:288.4   1st Qu.:282.6   1st Qu.:276.5  
+ Median :292.9   Median :289.7   Median :283.8   Median :277.7  
+ Mean   :292.6   Mean   :289.5   Mean   :283.7   Mean   :277.8  
+ 3rd Qu.:293.8   3rd Qu.:290.8   3rd Qu.:284.9   3rd Qu.:279.0  
+ Max.   :297.3   Max.   :294.2   Max.   :288.6   Max.   :283.5  
+ NA's   :23580   NA's   :23580   NA's   :23580   NA's   :23580  
+ Tavg.X12.prev     Precip.X01       Precip.X02       Precip.X03     
+ Min.   :263.8   Min.   :  9.06   Min.   :  7.21   Min.   :  0.154  
+ 1st Qu.:271.2   1st Qu.: 57.25   1st Qu.: 49.64   1st Qu.: 70.780  
+ Median :273.0   Median : 78.45   Median : 71.90   Median : 96.060  
+ Mean   :272.8   Mean   : 84.72   Mean   : 76.09   Mean   : 99.941  
+ 3rd Qu.:274.6   3rd Qu.:103.41   3rd Qu.: 96.94   3rd Qu.:123.640  
+ Max.   :279.7   Max.   :276.20   Max.   :209.15   Max.   :272.970  
+ NA's   :23580   NA's   :23400    NA's   :23400    NA's   :23400    
+   Precip.X04       Precip.X05       Precip.X06       Precip.X07    
+ Min.   : 14.74   Min.   : 19.83   Min.   : 14.62   Min.   : 27.43  
+ 1st Qu.: 62.50   1st Qu.: 74.81   1st Qu.: 76.09   1st Qu.: 91.29  
+ Median : 88.66   Median :105.00   Median :102.33   Median :113.01  
+ Mean   : 91.64   Mean   :107.22   Mean   :109.40   Mean   :120.34  
+ 3rd Qu.:113.90   3rd Qu.:135.71   3rd Qu.:134.43   3rd Qu.:145.11  
+ Max.   :238.54   Max.   :266.04   Max.   :296.69   Max.   :423.43  
+ NA's   :23400    NA's   :23400    NA's   :23400    NA's   :23400   
+   Precip.X08       Precip.X09       Precip.X10       Precip.X11    
+ Min.   : 21.48   Min.   :  2.37   Min.   :  1.06   Min.   :  9.25  
+ 1st Qu.: 70.01   1st Qu.: 52.49   1st Qu.: 44.81   1st Qu.: 45.36  
+ Median : 96.23   Median : 81.07   Median : 74.25   Median : 72.17  
+ Mean   :107.08   Mean   : 91.54   Mean   : 83.71   Mean   : 77.29  
+ 3rd Qu.:129.90   3rd Qu.:118.67   3rd Qu.:114.92   3rd Qu.:101.05  
+ Max.   :421.09   Max.   :324.42   Max.   :319.10   Max.   :354.36  
+ NA's   :23400    NA's   :23400    NA's   :23400    NA's   :23400   
+   Precip.X12     Precip.X01.prev  Precip.X02.prev  Precip.X03.prev  
+ Min.   :  2.49   Min.   :  9.06   Min.   :  7.21   Min.   :  0.154  
+ 1st Qu.: 57.25   1st Qu.: 57.00   1st Qu.: 49.73   1st Qu.: 70.390  
+ Median : 77.10   Median : 79.12   Median : 72.13   Median : 95.960  
+ Mean   : 82.95   Mean   : 84.79   Mean   : 76.29   Mean   : 99.713  
+ 3rd Qu.:103.91   3rd Qu.:103.81   3rd Qu.: 97.05   3rd Qu.:123.340  
+ Max.   :252.11   Max.   :276.20   Max.   :209.15   Max.   :272.970  
+ NA's   :23400    NA's   :23580    NA's   :23580    NA's   :23580    
+ Precip.X04.prev  Precip.X05.prev  Precip.X06.prev  Precip.X07.prev 
+ Min.   : 14.74   Min.   : 19.83   Min.   : 14.62   Min.   : 27.43  
+ 1st Qu.: 62.74   1st Qu.: 74.27   1st Qu.: 76.33   1st Qu.: 91.29  
+ Median : 88.66   Median :104.97   Median :102.76   Median :113.12  
+ Mean   : 91.71   Mean   :107.05   Mean   :109.79   Mean   :120.40  
+ 3rd Qu.:114.37   3rd Qu.:135.01   3rd Qu.:134.66   3rd Qu.:145.43  
+ Max.   :238.54   Max.   :266.04   Max.   :296.69   Max.   :423.43  
+ NA's   :23580    NA's   :23580    NA's   :23580    NA's   :23580   
+ Precip.X08.prev  Precip.X09.prev  Precip.X10.prev  Precip.X11.prev 
+ Min.   : 21.48   Min.   :  2.37   Min.   :  1.06   Min.   :  9.25  
+ 1st Qu.: 70.01   1st Qu.: 52.48   1st Qu.: 44.58   1st Qu.: 46.43  
+ Median : 96.08   Median : 80.13   Median : 75.06   Median : 72.27  
+ Mean   :107.00   Mean   : 91.18   Mean   : 83.99   Mean   : 77.74  
+ 3rd Qu.:129.40   3rd Qu.:117.03   3rd Qu.:115.28   3rd Qu.:101.39  
+ Max.   :421.09   Max.   :324.42   Max.   :319.10   Max.   :354.36  
+ NA's   :23580    NA's   :23580    NA's   :23580    NA's   :23580   
+ Precip.X12.prev   BA.tree.cm2     
+ Min.   :  2.49   Min.   :   0.00  
+ 1st Qu.: 57.37   1st Qu.:   0.00  
+ Median : 77.50   Median :   0.00  
+ Mean   : 83.19   Mean   : 118.87  
+ 3rd Qu.:104.56   3rd Qu.:  81.97  
+ Max.   :252.11   Max.   :4621.77  
+ NA's   :23580    NA's   :157      
+> dim(quru.all)
+[1] 43740    90
+> 
+> # Subsetting only complete cases & a small range of years
+> quru.run <- quru.all[complete.cases(quru.all) & quru.all$Year>=1990 & quru.all$Year<=2011,]
+> summary(quru.run)
+      Year          PlotID       TreeID    Site    Trans        Plot  
+ Min.   :1990   HIKA1  :44   BLDA408:22   BLD:44   A:132   Min.   :1  
+ 1st Qu.:1995   BLDA4  :22   BLDB210:22   FLT:22   B: 88   1st Qu.:1  
+ Median :2000   BLDB2  :22   FLTB204:22   HIK:66   C:  0   Median :2  
+ Mean   :2000   FLTB2  :22   HIKA112:22   HNK: 0           Mean   :2  
+ 3rd Qu.:2006   HIKA3  :22   HIKA124:22   IRN:66           3rd Qu.:3  
+ Max.   :2011   IRNA1  :22   HIKA311:22   MOR:22           Max.   :4  
+                (Other):66   (Other):88                               
+      BAI                CoreID   Pith       Pith.Yr         Inner     
+ Min.   :  11.57   BLDA408HI:22   N:154   Min.   :1833   Min.   :1838  
+ 1st Qu.:  91.45   BLDB210HI:22   Y: 66   1st Qu.:1914   1st Qu.:1916  
+ Median : 537.28   FLTB204HI:22           Median :1924   Median :1928  
+ Mean   : 910.43   HIKA112HI:22           Mean   :1923   Mean   :1927  
+ 3rd Qu.:1014.15   HIKA124HI:22           3rd Qu.:1953   3rd Qu.:1954  
+ Max.   :5138.91   HIKA311HI:22           Max.   :1975   Max.   :1976  
+                   (Other)  :88                                        
+     Outer      Bark    Use                                Notes   
+ Min.   :2012   N:  0   N:110   poor correlation with master  :44  
+ 1st Qu.:2012   Y:220   Y:110   break at 1931, 2 missing rings:22  
+ Median :2012                   cores reversed?               :22  
+ Mean   :2012                   not sure of pith est          :22  
+ 3rd Qu.:2012                   poor correlation              :22  
+ Max.   :2013                   poor correlation w/ master    :22  
+                                (Other)                       :66  
+  Pith.offset      Tree         Spp           Genus     Canopy    Live    
+ Min.   : 1   Min.   : 4   QURU   :220   Quercus :220   C:176   DEAD:  0  
+ 1st Qu.: 1   1st Qu.: 8   ACRU   :  0   Acer    :  0   D:  0   LIVE:220  
+ Median : 2   Median :10   ACSA   :  0   Betula  :  0   I: 22             
+ Mean   : 4   Mean   :14   BELE   :  0   Carya   :  0   U: 22             
+ 3rd Qu.: 5   3rd Qu.:12   BEPA   :  0   Castanea:  0                     
+ Max.   :17   Max.   :47   CADE   :  0   Cornus  :  0                     
+                           (Other):  0   (Other) :  0                     
+      Age           BA.m2ha          BAI.filled         BA.tree      
+ Min.   : 15.0   Min.   :0.03568   Min.   :  11.57   Min.   :  1121  
+ 1st Qu.: 48.0   1st Qu.:0.11861   1st Qu.:  91.45   1st Qu.:  3726  
+ Median : 75.5   Median :0.72495   Median : 537.28   Median : 22776  
+ Mean   : 77.8   Mean   :0.94233   Mean   : 910.43   Mean   : 53958  
+ 3rd Qu.: 93.0   3rd Qu.:1.27020   3rd Qu.:1014.15   3rd Qu.: 80750  
+ Max.   :178.0   Max.   :4.00466   Max.   :5138.91   Max.   :283015  
+                                                                     
+     Stems     Density.Ha    BAI.filled.plot    BA.plot       BA.m2ha.plot   
+ Min.   :1   Min.   :14.15   Min.   : 4550   Min.   : 3706   Min.   : 4.219  
+ 1st Qu.:1   1st Qu.:14.15   1st Qu.: 9549   1st Qu.: 6188   1st Qu.:11.185  
+ Median :1   Median :31.83   Median :13870   Median : 8352   Median :17.440  
+ Mean   :1   Mean   :26.53   Mean   :16168   Mean   :10950   Mean   :16.026  
+ 3rd Qu.:1   3rd Qu.:31.83   3rd Qu.:21686   3rd Qu.:18038   3rd Qu.:20.644  
+ Max.   :1   Max.   :31.83   Max.   :38677   Max.   :22926   Max.   :25.384  
+                                                                             
+ Density.ha.plot    Stems.plot    BAI.m2ha.plot    BA.m2ha.plot.live
+ Min.   : 183.9   Min.   : 9.00   Min.   :0.1448   Min.   : 6.075   
+ 1st Qu.: 537.6   1st Qu.:23.00   1st Qu.:0.2878   1st Qu.:16.930   
+ Median : 748.0   Median :28.00   Median :0.3675   Median :23.833   
+ Mean   : 694.7   Mean   :26.77   Mean   :0.3756   Mean   :25.277   
+ 3rd Qu.: 923.1   3rd Qu.:37.00   3rd Qu.:0.4420   3rd Qu.:29.255   
+ Max.   :1177.7   Max.   :38.00   Max.   :0.8590   Max.   :57.383   
+                                                                    
+     RelBA           Site.Trans    Latitude       Longitude     
+ Min.   :0.01735   HIKA   :66   Min.   :36.75   Min.   :-81.31  
+ 1st Qu.:0.06467   IRNA   :44   1st Qu.:36.76   1st Qu.:-81.31  
+ Median :0.21439   BLDA   :22   Median :37.82   Median :-79.98  
+ Mean   :0.23471   BLDB   :22   Mean   :37.68   Mean   :-80.21  
+ 3rd Qu.:0.35788   FLTB   :22   3rd Qu.:38.57   3rd Qu.:-79.17  
+ Max.   :0.63988   IRNB   :22   Max.   :38.57   Max.   :-79.17  
+                   (Other):22                                   
+      elev             flow               TPI              Tavg.X01    
+ Min.   : 738.1   Min.   :0.007666   Min.   :-0.09616   Min.   :264.0  
+ 1st Qu.:1006.1   1st Qu.:0.007879   1st Qu.:-0.05699   1st Qu.:269.6  
+ Median :1098.4   Median :0.010878   Median : 0.14476   Median :271.4  
+ Mean   :1080.8   Mean   :0.038309   Mean   : 0.08025   Mean   :271.4  
+ 3rd Qu.:1146.9   3rd Qu.:0.031593   3rd Qu.: 0.20568   3rd Qu.:273.4  
+ Max.   :1256.7   Max.   :0.237478   Max.   : 0.20998   Max.   :276.7  
+                                                                       
+    Tavg.X02        Tavg.X03        Tavg.X04        Tavg.X05    
+ Min.   :264.5   Min.   :268.8   Min.   :275.7   Min.   :280.4  
+ 1st Qu.:270.8   1st Qu.:274.1   1st Qu.:280.0   1st Qu.:284.5  
+ Median :272.8   Median :276.2   Median :282.0   Median :286.5  
+ Mean   :272.4   Mean   :276.1   Mean   :281.8   Mean   :286.3  
+ 3rd Qu.:274.4   3rd Qu.:278.6   3rd Qu.:283.9   3rd Qu.:288.1  
+ Max.   :277.7   Max.   :281.1   Max.   :286.6   Max.   :291.9  
+                                                                
+    Tavg.X06        Tavg.X07        Tavg.X08        Tavg.X09    
+ Min.   :286.0   Min.   :287.7   Min.   :287.6   Min.   :284.3  
+ 1st Qu.:288.8   1st Qu.:291.1   1st Qu.:290.5   1st Qu.:286.9  
+ Median :290.9   Median :292.5   Median :292.1   Median :288.7  
+ Mean   :290.5   Mean   :292.3   Mean   :291.9   Mean   :288.5  
+ 3rd Qu.:291.8   3rd Qu.:293.7   3rd Qu.:293.4   3rd Qu.:289.9  
+ Max.   :295.0   Max.   :295.9   Max.   :296.0   Max.   :292.6  
+                                                                
+    Tavg.X10        Tavg.X11        Tavg.X12     Tavg.X01.prev  
+ Min.   :278.6   Min.   :272.3   Min.   :265.5   Min.   :264.0  
+ 1st Qu.:281.3   1st Qu.:276.1   1st Qu.:271.5   1st Qu.:269.8  
+ Median :283.0   Median :278.0   Median :273.4   Median :271.7  
+ Mean   :282.8   Mean   :277.8   Mean   :273.2   Mean   :271.7  
+ 3rd Qu.:284.2   3rd Qu.:279.7   3rd Qu.:275.5   3rd Qu.:273.6  
+ Max.   :287.5   Max.   :281.7   Max.   :277.7   Max.   :276.7  
+                                                                
+ Tavg.X02.prev   Tavg.X03.prev   Tavg.X04.prev   Tavg.X05.prev  
+ Min.   :264.5   Min.   :268.8   Min.   :275.7   Min.   :280.4  
+ 1st Qu.:270.7   1st Qu.:274.2   1st Qu.:279.8   1st Qu.:284.4  
+ Median :272.7   Median :276.2   Median :281.9   Median :286.3  
+ Mean   :272.4   Mean   :276.2   Mean   :281.7   Mean   :286.2  
+ 3rd Qu.:274.2   3rd Qu.:278.6   3rd Qu.:283.8   3rd Qu.:288.0  
+ Max.   :277.7   Max.   :281.1   Max.   :286.6   Max.   :291.9  
+                                                                
+ Tavg.X06.prev   Tavg.X07.prev   Tavg.X08.prev   Tavg.X09.prev  
+ Min.   :286.0   Min.   :287.7   Min.   :287.6   Min.   :284.3  
+ 1st Qu.:288.8   1st Qu.:291.0   1st Qu.:290.5   1st Qu.:286.9  
+ Median :290.7   Median :292.4   Median :292.0   Median :288.7  
+ Mean   :290.5   Mean   :292.2   Mean   :291.9   Mean   :288.4  
+ 3rd Qu.:291.8   3rd Qu.:293.7   3rd Qu.:293.4   3rd Qu.:289.9  
+ Max.   :295.0   Max.   :295.9   Max.   :296.0   Max.   :292.6  
+                                                                
+ Tavg.X10.prev   Tavg.X11.prev   Tavg.X12.prev     Precip.X01    
+ Min.   :278.6   Min.   :272.3   Min.   :263.8   Min.   : 22.78  
+ 1st Qu.:281.6   1st Qu.:276.1   1st Qu.:271.1   1st Qu.: 56.50  
+ Median :283.0   Median :277.9   Median :273.0   Median : 81.33  
+ Mean   :282.9   Mean   :277.7   Mean   :272.8   Mean   : 90.27  
+ 3rd Qu.:284.4   3rd Qu.:279.6   3rd Qu.:275.1   3rd Qu.:104.45  
+ Max.   :287.5   Max.   :281.7   Max.   :277.7   Max.   :276.20  
+                                                                 
+   Precip.X02       Precip.X03       Precip.X04       Precip.X05    
+ Min.   : 13.73   Min.   : 30.45   Min.   : 28.32   Min.   : 32.40  
+ 1st Qu.: 42.90   1st Qu.: 84.73   1st Qu.: 65.25   1st Qu.: 71.91  
+ Median : 66.21   Median :101.62   Median : 98.98   Median :108.02  
+ Mean   : 71.47   Mean   :108.46   Mean   : 98.37   Mean   :114.46  
+ 3rd Qu.: 94.84   3rd Qu.:127.93   3rd Qu.:122.69   3rd Qu.:152.75  
+ Max.   :170.66   Max.   :245.75   Max.   :202.21   Max.   :240.60  
+                                                                    
+   Precip.X06       Precip.X07       Precip.X08       Precip.X09    
+ Min.   : 25.00   Min.   : 30.30   Min.   : 32.19   Min.   :  3.68  
+ 1st Qu.: 66.59   1st Qu.: 86.13   1st Qu.: 74.17   1st Qu.: 58.06  
+ Median : 97.76   Median :113.03   Median : 92.61   Median : 85.53  
+ Mean   :107.59   Mean   :115.32   Mean   : 96.35   Mean   :100.91  
+ 3rd Qu.:130.46   3rd Qu.:139.12   3rd Qu.:114.09   3rd Qu.:130.38  
+ Max.   :295.11   Max.   :292.53   Max.   :208.60   Max.   :324.42  
+                                                                    
+   Precip.X10       Precip.X11       Precip.X12     Precip.X01.prev 
+ Min.   :  2.42   Min.   : 10.18   Min.   : 38.78   Min.   : 28.39  
+ 1st Qu.: 45.85   1st Qu.: 52.82   1st Qu.: 58.76   1st Qu.: 58.69  
+ Median : 57.69   Median : 84.36   Median : 84.44   Median : 81.33  
+ Mean   : 74.54   Mean   : 84.92   Mean   : 87.40   Mean   : 91.69  
+ 3rd Qu.:104.42   3rd Qu.:108.36   3rd Qu.:105.99   3rd Qu.:104.45  
+ Max.   :302.71   Max.   :206.61   Max.   :180.88   Max.   :276.20  
+                                                                    
+ Precip.X02.prev  Precip.X03.prev  Precip.X04.prev  Precip.X05.prev 
+ Min.   : 13.73   Min.   : 30.45   Min.   : 28.32   Min.   : 32.40  
+ 1st Qu.: 45.16   1st Qu.: 81.62   1st Qu.: 65.25   1st Qu.: 71.91  
+ Median : 67.00   Median :101.22   Median : 98.88   Median :108.02  
+ Mean   : 72.94   Mean   :105.76   Mean   : 94.94   Mean   :114.77  
+ 3rd Qu.: 95.29   3rd Qu.:119.74   3rd Qu.:119.93   3rd Qu.:152.79  
+ Max.   :170.66   Max.   :245.75   Max.   :202.21   Max.   :240.60  
+                                                                    
+ Precip.X06.prev  Precip.X07.prev  Precip.X08.prev  Precip.X09.prev 
+ Min.   : 25.00   Min.   : 30.30   Min.   : 32.19   Min.   :  3.68  
+ 1st Qu.: 67.95   1st Qu.: 90.29   1st Qu.: 76.78   1st Qu.: 58.06  
+ Median :102.67   Median :117.16   Median : 94.93   Median : 85.53  
+ Mean   :112.33   Mean   :120.72   Mean   : 99.96   Mean   :103.31  
+ 3rd Qu.:142.61   3rd Qu.:145.11   3rd Qu.:119.97   3rd Qu.:130.30  
+ Max.   :295.11   Max.   :292.53   Max.   :208.60   Max.   :324.42  
+                                                                    
+ Precip.X10.prev  Precip.X11.prev  Precip.X12.prev   BA.tree.cm2     
+ Min.   :  2.42   Min.   : 10.18   Min.   : 38.78   Min.   :  11.21  
+ 1st Qu.: 45.85   1st Qu.: 52.82   1st Qu.: 56.81   1st Qu.:  37.26  
+ Median : 57.69   Median : 81.88   Median : 81.31   Median : 227.76  
+ Mean   : 75.79   Mean   : 84.10   Mean   : 85.14   Mean   : 539.58  
+ 3rd Qu.:105.74   3rd Qu.:107.04   3rd Qu.:102.53   3rd Qu.: 807.50  
+ Max.   :302.71   Max.   :206.61   Max.   :180.88   Max.   :2830.15  
+                                                                     
+> dim(quru.run)
+[1] 220  90
+> 
+> #############
+> # Vector with names of Months of the year
+> months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
+> 
+> # Selecting which previous and current year months to include in model
+> months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
+> months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
+> months.use <- c(months.prev, months.curr)
+> 
+> seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
+> seasons
+[1] "pX06.pX08" "pX09.pX11" "pX12.X02"  "X03.X05"   "X06.X08"   "X09.X11"  
+> 
+> quru.run$Tavg.pX06.pX08 <- rowMeans(quru.run[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
+> quru.run$Tavg.pX09.pX11 <- rowMeans(quru.run[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
+> quru.run$Tavg.pX12.X02 <- rowMeans(quru.run[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
+> quru.run$Tavg.X03.X05 <- rowMeans(quru.run[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
+> quru.run$Tavg.X06.X08 <- rowMeans(quru.run[,c("Tavg.X06", "Tavg.X07", "Tavg.X08")])
+> quru.run$Tavg.X09.X11 <- rowMeans(quru.run[,c("Tavg.X09", "Tavg.X10", "Tavg.X11")])
+> 
+> quru.run$Precip.pX06.pX08 <- rowMeans(quru.run[,c("Precip.X06.prev", "Precip.X07.prev", "Precip.X08.prev")])
+> quru.run$Precip.pX09.pX11 <- rowMeans(quru.run[,c("Precip.X09.prev", "Precip.X10.prev", "Precip.X11.prev")])
+> quru.run$Precip.pX12.X02 <- rowMeans(quru.run[,c("Precip.X12.prev", "Precip.X01", "Precip.X02")])
+> quru.run$Precip.X03.X05 <- rowMeans(quru.run[,c("Precip.X03", "Precip.X04", "Precip.X05")])
+> quru.run$Precip.X06.X08 <- rowMeans(quru.run[,c("Precip.X06", "Precip.X07", "Precip.X08")])
+> quru.run$Precip.X09.X11 <- rowMeans(quru.run[,c("Precip.X09", "Precip.X10", "Precip.X11")])
+> 
+> 
+> # Making vectors with the column names of the temp & precip months of interest
+> temp.col <- paste("Tavg", seasons, sep=".")
+> precip.col <- paste("Precip", seasons, sep=".")
+> 
+> # Column numbers of temp & precip months of interest
+> temp.col.ind <- which(names(quru.run) %in% c(temp.col))
+> precip.col.ind <- which(names(quru.run) %in% c(precip.col))
+> summary(quru.run[,temp.col.ind])
+ Tavg.pX06.pX08  Tavg.pX09.pX11  Tavg.pX12.X02    Tavg.X03.X05  
+ Min.   :287.9   Min.   :279.1   Min.   :266.7   Min.   :276.3  
+ 1st Qu.:290.1   1st Qu.:281.7   1st Qu.:270.9   1st Qu.:279.4  
+ Median :291.8   Median :283.2   Median :272.3   Median :281.7  
+ Mean   :291.5   Mean   :283.0   Mean   :272.2   Mean   :281.4  
+ 3rd Qu.:292.8   3rd Qu.:284.3   3rd Qu.:273.8   3rd Qu.:283.2  
+ Max.   :295.4   Max.   :285.7   Max.   :275.8   Max.   :285.7  
+  Tavg.X06.X08    Tavg.X09.X11  
+ Min.   :287.9   Min.   :279.1  
+ 1st Qu.:290.1   1st Qu.:281.8  
+ Median :291.9   Median :283.2  
+ Mean   :291.6   Mean   :283.0  
+ 3rd Qu.:292.9   3rd Qu.:284.4  
+ Max.   :295.4   Max.   :285.7  
+> summary(quru.run[,precip.col.ind])
+ Precip.pX06.pX08 Precip.pX09.pX11 Precip.pX12.X02  Precip.X03.X05  
+ Min.   : 56.16   Min.   : 25.07   Min.   : 31.93   Min.   : 58.91  
+ 1st Qu.: 92.66   1st Qu.: 59.52   1st Qu.: 60.99   1st Qu.: 88.83  
+ Median :106.35   Median : 86.39   Median : 78.61   Median :104.06  
+ Mean   :111.00   Mean   : 87.73   Mean   : 82.29   Mean   :107.10  
+ 3rd Qu.:129.81   3rd Qu.:112.76   3rd Qu.:100.09   3rd Qu.:122.66  
+ Max.   :210.60   Max.   :160.03   Max.   :152.56   Max.   :172.95  
+ Precip.X06.X08   Precip.X09.X11  
+ Min.   : 56.16   Min.   : 25.07  
+ 1st Qu.: 86.83   1st Qu.: 59.52  
+ Median :101.74   Median : 86.39  
+ Mean   :106.42   Mean   : 86.79  
+ 3rd Qu.:123.55   3rd Qu.:110.46  
+ Max.   :183.68   Max.   :158.02  
+> length(temp.col.ind)
+[1] 6
+> 
+> # quru.run$Tavg.yr <- rowMeans(quru.run[,temp.col.ind])
+> # quru.run$Precip.yr <- rowSums(quru.run[,precip.col.ind])
+> 
+> write.csv(quru.run, "Inputs/QURU_AllSites_1990-2011.csv", row.names=F)
+> 
+> #############
+> # Reading in Data
+> quru.run <- read.csv("Inputs/QURU_AllSites_1990-2011.csv")
+> summary(quru.run)
+      Year          PlotID       TreeID    Site    Trans        Plot  
+ Min.   :1990   HIKA1  :44   BLDA408:22   BLD:44   A:132   Min.   :1  
+ 1st Qu.:1995   BLDA4  :22   BLDB210:22   FLT:22   B: 88   1st Qu.:1  
+ Median :2000   BLDB2  :22   FLTB204:22   HIK:66           Median :2  
+ Mean   :2000   FLTB2  :22   HIKA112:22   IRN:66           Mean   :2  
+ 3rd Qu.:2006   HIKA3  :22   HIKA124:22   MOR:22           3rd Qu.:3  
+ Max.   :2011   IRNA1  :22   HIKA311:22                    Max.   :4  
+                (Other):66   (Other):88                               
+      BAI                CoreID   Pith       Pith.Yr         Inner     
+ Min.   :  11.57   BLDA408HI:22   N:154   Min.   :1833   Min.   :1838  
+ 1st Qu.:  91.45   BLDB210HI:22   Y: 66   1st Qu.:1914   1st Qu.:1916  
+ Median : 537.28   FLTB204HI:22           Median :1924   Median :1928  
+ Mean   : 910.43   HIKA112HI:22           Mean   :1923   Mean   :1927  
+ 3rd Qu.:1014.15   HIKA124HI:22           3rd Qu.:1953   3rd Qu.:1954  
+ Max.   :5138.91   HIKA311HI:22           Max.   :1975   Max.   :1976  
+                   (Other)  :88                                        
+     Outer      Bark    Use                                Notes   
+ Min.   :2012   Y:220   N:110   poor correlation with master  :44  
+ 1st Qu.:2012           Y:110   break at 1931, 2 missing rings:22  
+ Median :2012                   cores reversed?               :22  
+ Mean   :2012                   not sure of pith est          :22  
+ 3rd Qu.:2012                   poor correlation              :22  
+ Max.   :2013                   poor correlation w/ master    :22  
+                                (Other)                       :66  
+  Pith.offset      Tree      Spp          Genus     Canopy    Live    
+ Min.   : 1   Min.   : 4   QURU:220   Quercus:220   C:176   LIVE:220  
+ 1st Qu.: 1   1st Qu.: 8                            I: 22             
+ Median : 2   Median :10                            U: 22             
+ Mean   : 4   Mean   :14                                              
+ 3rd Qu.: 5   3rd Qu.:12                                              
+ Max.   :17   Max.   :47                                              
+                                                                      
+      Age           BA.m2ha          BAI.filled         BA.tree      
+ Min.   : 15.0   Min.   :0.03568   Min.   :  11.57   Min.   :  1121  
+ 1st Qu.: 48.0   1st Qu.:0.11861   1st Qu.:  91.45   1st Qu.:  3726  
+ Median : 75.5   Median :0.72495   Median : 537.28   Median : 22776  
+ Mean   : 77.8   Mean   :0.94233   Mean   : 910.43   Mean   : 53958  
+ 3rd Qu.: 93.0   3rd Qu.:1.27020   3rd Qu.:1014.15   3rd Qu.: 80750  
+ Max.   :178.0   Max.   :4.00466   Max.   :5138.91   Max.   :283015  
+                                                                     
+     Stems     Density.Ha    BAI.filled.plot    BA.plot       BA.m2ha.plot   
+ Min.   :1   Min.   :14.15   Min.   : 4550   Min.   : 3706   Min.   : 4.219  
+ 1st Qu.:1   1st Qu.:14.15   1st Qu.: 9549   1st Qu.: 6188   1st Qu.:11.185  
+ Median :1   Median :31.83   Median :13870   Median : 8352   Median :17.440  
+ Mean   :1   Mean   :26.53   Mean   :16168   Mean   :10950   Mean   :16.026  
+ 3rd Qu.:1   3rd Qu.:31.83   3rd Qu.:21686   3rd Qu.:18038   3rd Qu.:20.644  
+ Max.   :1   Max.   :31.83   Max.   :38677   Max.   :22926   Max.   :25.384  
+                                                                             
+ Density.ha.plot    Stems.plot    BAI.m2ha.plot    BA.m2ha.plot.live
+ Min.   : 183.9   Min.   : 9.00   Min.   :0.1448   Min.   : 6.075   
+ 1st Qu.: 537.6   1st Qu.:23.00   1st Qu.:0.2878   1st Qu.:16.930   
+ Median : 748.0   Median :28.00   Median :0.3675   Median :23.833   
+ Mean   : 694.7   Mean   :26.77   Mean   :0.3756   Mean   :25.277   
+ 3rd Qu.: 923.1   3rd Qu.:37.00   3rd Qu.:0.4420   3rd Qu.:29.255   
+ Max.   :1177.7   Max.   :38.00   Max.   :0.8590   Max.   :57.383   
+                                                                    
+     RelBA         Site.Trans    Latitude       Longitude           elev       
+ Min.   :0.01735   BLDA:22    Min.   :36.75   Min.   :-81.31   Min.   : 738.1  
+ 1st Qu.:0.06467   BLDB:22    1st Qu.:36.76   1st Qu.:-81.31   1st Qu.:1006.1  
+ Median :0.21439   FLTB:22    Median :37.82   Median :-79.98   Median :1098.4  
+ Mean   :0.23471   HIKA:66    Mean   :37.68   Mean   :-80.21   Mean   :1080.8  
+ 3rd Qu.:0.35788   IRNA:44    3rd Qu.:38.57   3rd Qu.:-79.17   3rd Qu.:1146.9  
+ Max.   :0.63988   IRNB:22    Max.   :38.57   Max.   :-79.17   Max.   :1256.7  
+                   MORB:22                                                     
+      flow               TPI              Tavg.X01        Tavg.X02    
+ Min.   :0.007666   Min.   :-0.09616   Min.   :264.0   Min.   :264.5  
+ 1st Qu.:0.007879   1st Qu.:-0.05699   1st Qu.:269.6   1st Qu.:270.8  
+ Median :0.010878   Median : 0.14476   Median :271.4   Median :272.8  
+ Mean   :0.038309   Mean   : 0.08025   Mean   :271.4   Mean   :272.4  
+ 3rd Qu.:0.031593   3rd Qu.: 0.20568   3rd Qu.:273.4   3rd Qu.:274.4  
+ Max.   :0.237478   Max.   : 0.20998   Max.   :276.7   Max.   :277.7  
+                                                                      
+    Tavg.X03        Tavg.X04        Tavg.X05        Tavg.X06    
+ Min.   :268.8   Min.   :275.7   Min.   :280.4   Min.   :286.0  
+ 1st Qu.:274.1   1st Qu.:280.0   1st Qu.:284.5   1st Qu.:288.8  
+ Median :276.2   Median :282.0   Median :286.5   Median :290.9  
+ Mean   :276.1   Mean   :281.8   Mean   :286.3   Mean   :290.5  
+ 3rd Qu.:278.6   3rd Qu.:283.9   3rd Qu.:288.1   3rd Qu.:291.8  
+ Max.   :281.1   Max.   :286.6   Max.   :291.9   Max.   :295.0  
+                                                                
+    Tavg.X07        Tavg.X08        Tavg.X09        Tavg.X10    
+ Min.   :287.7   Min.   :287.6   Min.   :284.3   Min.   :278.6  
+ 1st Qu.:291.1   1st Qu.:290.5   1st Qu.:286.9   1st Qu.:281.3  
+ Median :292.5   Median :292.1   Median :288.7   Median :283.0  
+ Mean   :292.3   Mean   :291.9   Mean   :288.5   Mean   :282.8  
+ 3rd Qu.:293.7   3rd Qu.:293.4   3rd Qu.:289.9   3rd Qu.:284.2  
+ Max.   :295.9   Max.   :296.0   Max.   :292.6   Max.   :287.5  
+                                                                
+    Tavg.X11        Tavg.X12     Tavg.X01.prev   Tavg.X02.prev  
+ Min.   :272.3   Min.   :265.5   Min.   :264.0   Min.   :264.5  
+ 1st Qu.:276.1   1st Qu.:271.5   1st Qu.:269.8   1st Qu.:270.7  
+ Median :278.0   Median :273.4   Median :271.7   Median :272.7  
+ Mean   :277.8   Mean   :273.2   Mean   :271.7   Mean   :272.4  
+ 3rd Qu.:279.7   3rd Qu.:275.5   3rd Qu.:273.6   3rd Qu.:274.2  
+ Max.   :281.7   Max.   :277.7   Max.   :276.7   Max.   :277.7  
+                                                                
+ Tavg.X03.prev   Tavg.X04.prev   Tavg.X05.prev   Tavg.X06.prev  
+ Min.   :268.8   Min.   :275.7   Min.   :280.4   Min.   :286.0  
+ 1st Qu.:274.2   1st Qu.:279.8   1st Qu.:284.4   1st Qu.:288.8  
+ Median :276.2   Median :281.9   Median :286.3   Median :290.7  
+ Mean   :276.2   Mean   :281.7   Mean   :286.2   Mean   :290.5  
+ 3rd Qu.:278.6   3rd Qu.:283.8   3rd Qu.:288.0   3rd Qu.:291.8  
+ Max.   :281.1   Max.   :286.6   Max.   :291.9   Max.   :295.0  
+                                                                
+ Tavg.X07.prev   Tavg.X08.prev   Tavg.X09.prev   Tavg.X10.prev  
+ Min.   :287.7   Min.   :287.6   Min.   :284.3   Min.   :278.6  
+ 1st Qu.:291.0   1st Qu.:290.5   1st Qu.:286.9   1st Qu.:281.6  
+ Median :292.4   Median :292.0   Median :288.7   Median :283.0  
+ Mean   :292.2   Mean   :291.9   Mean   :288.4   Mean   :282.9  
+ 3rd Qu.:293.7   3rd Qu.:293.4   3rd Qu.:289.9   3rd Qu.:284.4  
+ Max.   :295.9   Max.   :296.0   Max.   :292.6   Max.   :287.5  
+                                                                
+ Tavg.X11.prev   Tavg.X12.prev     Precip.X01       Precip.X02    
+ Min.   :272.3   Min.   :263.8   Min.   : 22.78   Min.   : 13.73  
+ 1st Qu.:276.1   1st Qu.:271.1   1st Qu.: 56.50   1st Qu.: 42.90  
+ Median :277.9   Median :273.0   Median : 81.33   Median : 66.21  
+ Mean   :277.7   Mean   :272.8   Mean   : 90.27   Mean   : 71.47  
+ 3rd Qu.:279.6   3rd Qu.:275.1   3rd Qu.:104.45   3rd Qu.: 94.84  
+ Max.   :281.7   Max.   :277.7   Max.   :276.20   Max.   :170.66  
+                                                                  
+   Precip.X03       Precip.X04       Precip.X05       Precip.X06    
+ Min.   : 30.45   Min.   : 28.32   Min.   : 32.40   Min.   : 25.00  
+ 1st Qu.: 84.73   1st Qu.: 65.25   1st Qu.: 71.91   1st Qu.: 66.59  
+ Median :101.62   Median : 98.98   Median :108.02   Median : 97.76  
+ Mean   :108.46   Mean   : 98.37   Mean   :114.46   Mean   :107.59  
+ 3rd Qu.:127.93   3rd Qu.:122.69   3rd Qu.:152.75   3rd Qu.:130.46  
+ Max.   :245.75   Max.   :202.21   Max.   :240.60   Max.   :295.11  
+                                                                    
+   Precip.X07       Precip.X08       Precip.X09       Precip.X10    
+ Min.   : 30.30   Min.   : 32.19   Min.   :  3.68   Min.   :  2.42  
+ 1st Qu.: 86.13   1st Qu.: 74.17   1st Qu.: 58.06   1st Qu.: 45.85  
+ Median :113.03   Median : 92.61   Median : 85.53   Median : 57.69  
+ Mean   :115.32   Mean   : 96.35   Mean   :100.91   Mean   : 74.54  
+ 3rd Qu.:139.12   3rd Qu.:114.09   3rd Qu.:130.38   3rd Qu.:104.42  
+ Max.   :292.53   Max.   :208.60   Max.   :324.42   Max.   :302.71  
+                                                                    
+   Precip.X11       Precip.X12     Precip.X01.prev  Precip.X02.prev 
+ Min.   : 10.18   Min.   : 38.78   Min.   : 28.39   Min.   : 13.73  
+ 1st Qu.: 52.82   1st Qu.: 58.76   1st Qu.: 58.69   1st Qu.: 45.16  
+ Median : 84.36   Median : 84.44   Median : 81.33   Median : 67.00  
+ Mean   : 84.92   Mean   : 87.40   Mean   : 91.69   Mean   : 72.94  
+ 3rd Qu.:108.36   3rd Qu.:105.99   3rd Qu.:104.45   3rd Qu.: 95.29  
+ Max.   :206.61   Max.   :180.88   Max.   :276.20   Max.   :170.66  
+                                                                    
+ Precip.X03.prev  Precip.X04.prev  Precip.X05.prev  Precip.X06.prev 
+ Min.   : 30.45   Min.   : 28.32   Min.   : 32.40   Min.   : 25.00  
+ 1st Qu.: 81.62   1st Qu.: 65.25   1st Qu.: 71.91   1st Qu.: 67.95  
+ Median :101.22   Median : 98.88   Median :108.02   Median :102.67  
+ Mean   :105.76   Mean   : 94.94   Mean   :114.77   Mean   :112.33  
+ 3rd Qu.:119.74   3rd Qu.:119.93   3rd Qu.:152.79   3rd Qu.:142.61  
+ Max.   :245.75   Max.   :202.21   Max.   :240.60   Max.   :295.11  
+                                                                    
+ Precip.X07.prev  Precip.X08.prev  Precip.X09.prev  Precip.X10.prev 
+ Min.   : 30.30   Min.   : 32.19   Min.   :  3.68   Min.   :  2.42  
+ 1st Qu.: 90.29   1st Qu.: 76.78   1st Qu.: 58.06   1st Qu.: 45.85  
+ Median :117.16   Median : 94.93   Median : 85.53   Median : 57.69  
+ Mean   :120.72   Mean   : 99.96   Mean   :103.31   Mean   : 75.79  
+ 3rd Qu.:145.11   3rd Qu.:119.97   3rd Qu.:130.30   3rd Qu.:105.74  
+ Max.   :292.53   Max.   :208.60   Max.   :324.42   Max.   :302.71  
+                                                                    
+ Precip.X11.prev  Precip.X12.prev   BA.tree.cm2      Tavg.pX06.pX08 
+ Min.   : 10.18   Min.   : 38.78   Min.   :  11.21   Min.   :287.9  
+ 1st Qu.: 52.82   1st Qu.: 56.81   1st Qu.:  37.26   1st Qu.:290.1  
+ Median : 81.88   Median : 81.31   Median : 227.76   Median :291.8  
+ Mean   : 84.10   Mean   : 85.14   Mean   : 539.58   Mean   :291.5  
+ 3rd Qu.:107.04   3rd Qu.:102.53   3rd Qu.: 807.50   3rd Qu.:292.8  
+ Max.   :206.61   Max.   :180.88   Max.   :2830.15   Max.   :295.4  
+                                                                    
+ Tavg.pX09.pX11  Tavg.pX12.X02    Tavg.X03.X05    Tavg.X06.X08  
+ Min.   :279.1   Min.   :266.7   Min.   :276.3   Min.   :287.9  
+ 1st Qu.:281.7   1st Qu.:270.9   1st Qu.:279.4   1st Qu.:290.1  
+ Median :283.2   Median :272.3   Median :281.7   Median :291.9  
+ Mean   :283.0   Mean   :272.2   Mean   :281.4   Mean   :291.6  
+ 3rd Qu.:284.3   3rd Qu.:273.8   3rd Qu.:283.2   3rd Qu.:292.9  
+ Max.   :285.7   Max.   :275.8   Max.   :285.7   Max.   :295.4  
+                                                                
+  Tavg.X09.X11   Precip.pX06.pX08 Precip.pX09.pX11 Precip.pX12.X02 
+ Min.   :279.1   Min.   : 56.16   Min.   : 25.07   Min.   : 31.93  
+ 1st Qu.:281.8   1st Qu.: 92.66   1st Qu.: 59.52   1st Qu.: 60.99  
+ Median :283.2   Median :106.35   Median : 86.39   Median : 78.61  
+ Mean   :283.0   Mean   :111.00   Mean   : 87.73   Mean   : 82.29  
+ 3rd Qu.:284.4   3rd Qu.:129.81   3rd Qu.:112.76   3rd Qu.:100.09  
+ Max.   :285.7   Max.   :210.60   Max.   :160.03   Max.   :152.56  
+                                                                   
+ Precip.X03.X05   Precip.X06.X08   Precip.X09.X11  
+ Min.   : 58.91   Min.   : 56.16   Min.   : 25.07  
+ 1st Qu.: 88.83   1st Qu.: 86.83   1st Qu.: 59.52  
+ Median :104.06   Median :101.74   Median : 86.39  
+ Mean   :107.10   Mean   :106.42   Mean   : 86.79  
+ 3rd Qu.:122.66   3rd Qu.:123.55   3rd Qu.:110.46  
+ Max.   :172.95   Max.   :183.68   Max.   :158.02  
+                                                   
+> 
+> # Loading previous runs
+> #load(file="Test results for QURU 4 - All Sites 1990-2011.Rdata")
+> 
+> 
+> ####################################################################################################################
+> overall.model <- function(
++ 							   SIZE,aa,ab, gmax,             # Autogenic (a) -- ABSOLUTE UNITS (from gmax)
++                             BA.PLOT,RS,ca,cb,cc,cd,ce,cf,cg, # Competition (c) -- scalar
++                             # # BA.PLOT,RS,ca,cb,cc,cd,cf,cg, # Competition (c) -- scalar, removed intercept
++                             TEMP,ta1,tb1,					 # Temperature (t) -- scalar
++                             PRECIP,FLOW,pa1,pb1,pc1         		 # Preciptiation (p) -- scalar
++                             # TRANS, ha		             	 # Habitat (h) -- scalar
++                             )
++ 	{
++ 	################
++ 	# Autogenic Growth: 0-1 * gmax (max possible growth, absolute units)
++ 	################
++ 	autogenic.effect <- gmax*(1 - aa*exp(-ab*SIZE))   
++ 	# autogenic.effect <- gmax*(1-aa*exp(-ab*SIZE))   
++ 
++ 
++ 	################
++ 	# Competition Effect: 0-1 
++ 	################
++ 	size.effect <- ca*exp(-cb*(RS^cc))
++ 	comp.effect <- (ce/1000 + ( (1-ce/1000)/(1+(BA.PLOT/cf)^cg)))
++ 	# comp.effect <- (1/(1+(BA.PLOT/cf)^cg))
++ 	comp.response <- exp(-size.effect*(comp.effect^cd))
++ 
++  	################
++ 	# Climate Effect: Now Scalar
++ 	################
++ 	
++ 	#Temp on scale 0-1
++     temp.effect <- t(exp(-0.5*((t(TEMP)-ta1)/tb1)^2))
++ 
++     # Precip on scale 0-1
++     # precip.effect <- t(1/(1+(t(PRECIP)/pa1)^pb1))
++ 	precip.effect <- t(exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) # Gaussian Data Frame
++ 
++ 	# Multiplying temp & precip together
++     climate.effect <- temp.effect * precip.effect
++ 	 
++ 	 ### LEM: do row sums
++ 	 ##### CRR note: I think this should be on a scale from 0-1; 
++      # climate.effect <- colSums(climate.effect) 
++ 	 climate.effect2 <- apply(climate.effect, 1, FUN=prod)
++ 	
++ 
++ 	################
++ 	# Habitat Effect: 0-1
++ 	# Note: removed from model for the moment, may add Topographic position or upslope area later
++ 	################
++ 	# habitat.effect <- ha[TRANS]
++ 
++ 	# comp.response <- 1
++ 	habitat.effect <- 1
++ 	# climate.effect2 <- precip.effect
++ 
++ 	autogenic.effect*comp.response*habitat.effect*climate.effect2
++ 	
++ 
++ 	}
+> 
+> 
+> ####################################################################################################################
+> ####################################################################################################################
+> ### setting up annealing
+> 
+> # par <- results$best_par
+> 
+> # need a list that gives initial values for all of the "parameters"
+> par<-list(
++ 		  aa=0.91, ab=0.006, gmax=10000,  	# Autogenic
++           ca=423.4, cb=144.5, cc=5, cd=3.2, ce=171.3, cf=113.8, cg=-751.35,  # Competition
++           ta1=c(323,	263.2,	254.5,	311.16,	293.1,	293.1), 
++           tb1=c(494.7,	484.9,	116.8,	56.73,	3.68,	8.9),
++           pa1=c(236.15,	343,	20.82,	500,	248,	172.1658), 
++           pb1=c(710.1,	683.8,	643.2,	1359,	192.3,	2000), 
++           pc1=0.776, 
++           # # ha=rep(0.5,3),  # Habitat
++           sd=558.677)
+> 
+> # also need a list that identifies the independent variables
+> var <- list(SIZE = "BA.tree.cm2",  # Autogenic
++             BA.PLOT="BA.m2ha.plot.live", RS="RelBA",  # Competition
++             TEMP = quru.run[,temp.col.ind], # hard-coded above
++             PRECIP = quru.run[,precip.col.ind], FLOW="flow"
++             # TRANS="Site.Trans" # Habitat
++             )
+> 
+> ## Set bounds and initial search ranges within which to search for parameters
+> ##   NOTE:  the s and sd parameters have to be greater than zero (algebraically)
+> par_lo <-list(
++ 			  aa=0, ab=0, gmax=0,  # Autogenic
++               ca=0, cb=0, cc=0, cd=0, ce=0, cf=-100, cg=-1000, # Competition
++               # # ca=0, cb=0, cc=0, cd=0, cf=-100, cg=-200, # Competition
++               ta1=rep(250, length=length(temp.col.ind)), tb1=rep(0, length=length(temp.col.ind)),
++               pa1=rep(0, length=length(precip.col.ind)), pb1=rep(0, length=length(precip.col.ind)), pc1=0,
++ 			# ha=rep(0,3), # Habitat
++               sd=0.1)
+> 
+> 
+> par_hi <-list(
++ 			  aa=1, ab=1000, gmax=10000, # Autogenic
++               ca=2000, cb=1000, cc=5, cd=5, ce=1000, cf=1000, cg=1000,	# Competition
++               # # ca=1000, cb=1000, cc=50, cd=5, cf=500, cg=1000,	# Competition
++               ta1=rep(325, length=length(temp.col.ind)), tb1=rep(500, length=length(temp.col.ind)),
++               pa1=rep(500, length=length(precip.col.ind)), pb1=rep(2000, length=length(precip.col.ind)), pc1=1,
++               # ha=rep(1,3), # Habitat
++               sd=1000)
+> 
+> ## Specify the dependent variable, and name it using whatever
+> ##    argument name is used in the pdf ("x" in the normal.pdf function above)
+> var$x<-"BAI"
+> 
+> ## predicted value in your PDF should be given the reserved name "predicted"
+> ##   Anneal will use your scientific model and your data and calculate the
+> ##   predicted value for each observation and store it internally in an object
+> ##   called "predicted"
+> var$mean<-"predicted"
+> 
+> ## Have it calculate log likelihood
+> var$log<-TRUE
+> 
+> ##  now call the annealing algorithm, choosing which model to use
+> #  "data" should be whatever the name of your dataframe is...
+> results <- anneal(overall.model, par, var, quru.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+> 
+> save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
+> 
+> write_results(results,file.path("Outputs", paste( run.label, "_Results.txt", sep="")))
+> 
+> ## display some of the results in the console
+> results$best_pars;
+$aa
+[1] 1
+
+$ab
+[1] 0.01331884
+
+$gmax
+[1] 10000
+
+$ca
+[1] 108.8543
+
+$cb
+[1] 157.5654
+
+$cc
+[1] 5
+
+$cd
+[1] 4.082193
+
+$ce
+[1] 113.737
+
+$cf
+[1] 501.1853
+
+$cg
+[1] -0.330827
+
+$ta1
+[1] 250.5587 297.5863 306.5141 323.7390 294.7265 291.3816
+
+$tb1
+[1] 157.223118 250.270591 126.093623 499.990982   5.504236   7.383300
+
+$pa1
+[1] 1.132228e+02 4.771435e+02 5.229718e-15 5.931671e+01 1.424751e+02
+[6] 2.062033e+02
+
+$pb1
+[1]   82.77589 1999.83094  367.86396  279.16817   87.87492  191.63979
+
+$pc1
+[1] 0.03988765
+
+$sd
+[1] 494.7602
+
+> results$max_likeli;
+[1] -1679.057
+> results$aic_corr ;
+[1] 3444.671
+> results$slope;
+[1] 0.9981399
+> results$R2
+[1] 0.7894569
+> 
+> ####################################################################################################################
+> ####################################################################################################################
+> load(file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
+> 
+> 
+> # Looking at Residuals and Parameters
+> #windows()
+> plot(results$source_data$predicted,results$source_data$BAI,xlab="Predicted",ylab="Observed")
+> abline(0,1,lwd=2,col="red")
+> 
+> results$source_data$residual <- results$source_data$BAI - results$source_data$predicted
+> #windows()
+> hist(results$source_data$residual)
+> 
+> 
+> ##################################
+> autogenic.effect <- function(SIZE,aa,ab) { (1 - aa*exp(-ab*SIZE))  }
+> ##################################
+> plot(BAI ~ BA.tree.cm2, data=results$source_data)
+> plot(BAI ~ Age, data=results$source_data)
+> plot(BA.tree.cm2 ~ Age, data=results$source_data)
+> 
+> summary(results$source_data$BA.tree.cm2)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  11.21   37.26  227.80  539.60  807.50 2830.00 
+> summary(results$source_data$Age)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   15.0    48.0    75.5    77.8    93.0   178.0 
+> 
+> # Effect of Tree Basal Area
+> #windows()
+> par(mar=c(5,5,4,2), mfrow=c(1,1))
+> x <- seq(0,max(ceiling(results$source_data$BA.tree.cm2)),1)
+> y <- autogenic.effect(x,results$best_pars$aa,results$best_pars$ab)
+> 
+> pdf(file.path("Figures", paste(run.label, " - Autogenic Scalar.pdf", sep="")))
+> plot(x,y,ylim=c(0,1),xlab="Tree Basal Area (cm2)",ylab="Effect of Size on Growth",
++      cex.axis=1.25,cex.lab=1.5,type="l",lwd=2,main=run.label)
+> dev.off()
+pdf 
+  2 
+> 
+> 
+> #################################
+> size.effect <- function(SIZE,ca,cb,cc) {ca*exp(-cb*(SIZE^cc))}
+> comp.effect <- function(BA.PLOT,ce,cf,cg) {ce/1000 + ( (1-ce/1000)/(1+(BA.PLOT/cf)^cg))}
+> comp.response <- function(SIZE,BA.PLOT,ca,cb,cc,cd,ce,cf,cg)
++   { size.effect <- ca*exp(-cb*(SIZE^cc))
++     comp.effect <- (ce/1000 + ( (1-ce/1000)/(1+(BA.PLOT/cf)^cg)))
++     comp.response <- exp(-size.effect*(comp.effect^cd)) }
+> ##################################
+> # Size Effect
+> plot(BAI ~ RelBA, data=results$source_data)
+> 
+> par(mar=c(5,5,4,2))
+> x <- seq(0,1,0.01)
+> y <- size.effect(x,results$best_pars$ca, results$best_pars$cb,results$best_pars$cc)
+> summary(y)
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+  0.0000   0.0000   0.7914  36.5100  93.3300 108.9000 
+> 
+> pdf(file.path("Figures", paste(run.label, " - Competition Size Effect.pdf", sep="")))
+> plot(x,y,xlab="Relative Size",ylab="Size Effect",type="l",lwd=2,
++       cex.lab=1.5,cex.axis=1.25,main=run.label)
+> #savePlot(file=paste("Competition Plot 1 ",run.label,".png",sep=""),type="png")
+> dev.off()
+pdf 
+  2 
+> 
+> #####################
+> # Plot BA effect
+> plot(BAI ~ BA.m2ha.plot, data=results$source_data)
+> 
+> par(mar=c(5,5,4,2))
+> x <- seq(0,60,0.1)
+> y <- comp.effect(x, results$best_pars$ce, results$best_pars$cf,results$best_pars$cg)
+> summary(y)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.1137  0.3251  0.3642  0.3506  0.3890  0.4074 
+> 
+> pdf(file.path("Figures", paste(run.label, " - Competition Competitive Effect.pdf", sep="")))
+> plot(x,y,ylim=c(0,1),xlab="Plot BA",ylab="Competitive Effect",type="l",lwd=2,
++        cex.lab=1.5,cex.axis=1.25,main=run.label)
+> dev.off()
+pdf 
+  2 
+> #savePlot(file=paste("Competition Plot 2 ",run.label,".png",sep=""),type="png")
+> 
+> #####################
+> # Competition Response: Size vs. Response with different plot BA levels
+> plot(BA.m2ha.plot~ RelBA, data=results$source_data)
+> 
+> 
+> pdf(file.path("Figures", paste(run.label, " - Competition Response Scalar.pdf", sep="")))
+> par(mar=c(5,5,4,2))
+> colors <- c("red","orange","blue","cyan","green")
+> x <- seq(0,1,0.01)
+> y <- comp.response(SIZE=x, BA.PLOT=50, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> plot(x,y,ylim=c(0,1),xlab="Relative Size",ylab="Competition Scalar",type="l",col=colors[1],lwd=2,
++      cex.lab=1.5,cex.axis=1.25,main=run.label)
+> y <- comp.response(SIZE=x, BA.PLOT=40, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[2],lwd=2)
+> y <- comp.response(SIZE=x, BA.PLOT=30, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[3],lwd=2)
+> y <- comp.response(SIZE=x, BA.PLOT=20, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[4],lwd=2)
+> y <- comp.response(SIZE=x, BA.PLOT=10, results$best_pars$ca, results$best_pars$cb, results$best_pars$cc, results$best_pars$cd, results$best_pars$ce, results$best_pars$cf, results$best_pars$cg)
+> lines(x,y,col=colors[5],lwd=2)
+> lines(x,y,col=colors[6],lwd=2)
+> legend("bottomright",legend=c(50,40,30,20,10),col=colors,bty="n",lwd=2,title="Plot\nBasal\nArea",cex=1.25)
+> dev.off()
+pdf 
+  2 
+> #savePlot(file=paste("Competition Plot 3 ",run.label,".png",sep=""),type="png")
+> 
+> 
+> ##################################
+> temp.effect <- function(TEMP,ta1,tb1)
++        { t(exp(-0.5*((t(TEMP)-ta1)/tb1)^2))  }
+> 
+> precip.effect <- function(PRECIP,FLOW,pa1,pb1,pc1)
++        { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) }
+Error: unexpected ')' in:
+"precip.effect <- function(PRECIP,FLOW,pa1,pb1,pc1)
+       { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2))"
+Execution halted
