@@ -34,36 +34,36 @@ quru.all <- all.data[all.data$Spp=="QURU", ]
 summary(quru.all)
 dim(quru.all)
 
-# Subsetting only complete cases & a small range of years
-quru.run <- quru.all[complete.cases(quru.all) & quru.all$Year>=1990 & quru.all$Year<=2011,]
-summary(quru.run)
-dim(quru.run)
+# # Subsetting only complete cases & a small range of years
+# quru.run <- quru.all[complete.cases(quru.all) & quru.all$Year>=1990 & quru.all$Year<=2011,]
+# summary(quru.run)
+# dim(quru.run)
 
-#############
-# Vector with names of Months of the year
-months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
+# #############
+# # Vector with names of Months of the year
+# months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
 
-# Selecting which previous and current year months to include in model
-months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
-months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
-months.use <- c(months.prev, months.curr)
+# # Selecting which previous and current year months to include in model
+# months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
+# months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
+# months.use <- c(months.prev, months.curr)
 
 seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
 seasons
 
-quru.run$Tavg.pX06.pX08 <- rowMeans(quru.run[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
-quru.run$Tavg.pX09.pX11 <- rowMeans(quru.run[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
-quru.run$Tavg.pX12.X02 <- rowMeans(quru.run[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
-quru.run$Tavg.X03.X05 <- rowMeans(quru.run[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
-quru.run$Tavg.X06.X08 <- rowMeans(quru.run[,c("Tavg.X06", "Tavg.X07", "Tavg.X08")])
-quru.run$Tavg.X09.X11 <- rowMeans(quru.run[,c("Tavg.X09", "Tavg.X10", "Tavg.X11")])
+# quru.run$Tavg.pX06.pX08 <- rowMeans(quru.run[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
+# quru.run$Tavg.pX09.pX11 <- rowMeans(quru.run[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
+# quru.run$Tavg.pX12.X02 <- rowMeans(quru.run[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
+# quru.run$Tavg.X03.X05 <- rowMeans(quru.run[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
+# quru.run$Tavg.X06.X08 <- rowMeans(quru.run[,c("Tavg.X06", "Tavg.X07", "Tavg.X08")])
+# quru.run$Tavg.X09.X11 <- rowMeans(quru.run[,c("Tavg.X09", "Tavg.X10", "Tavg.X11")])
 
-quru.run$Precip.pX06.pX08 <- rowMeans(quru.run[,c("Precip.X06.prev", "Precip.X07.prev", "Precip.X08.prev")])
-quru.run$Precip.pX09.pX11 <- rowMeans(quru.run[,c("Precip.X09.prev", "Precip.X10.prev", "Precip.X11.prev")])
-quru.run$Precip.pX12.X02 <- rowMeans(quru.run[,c("Precip.X12.prev", "Precip.X01", "Precip.X02")])
-quru.run$Precip.X03.X05 <- rowMeans(quru.run[,c("Precip.X03", "Precip.X04", "Precip.X05")])
-quru.run$Precip.X06.X08 <- rowMeans(quru.run[,c("Precip.X06", "Precip.X07", "Precip.X08")])
-quru.run$Precip.X09.X11 <- rowMeans(quru.run[,c("Precip.X09", "Precip.X10", "Precip.X11")])
+# quru.run$Precip.pX06.pX08 <- rowMeans(quru.run[,c("Precip.X06.prev", "Precip.X07.prev", "Precip.X08.prev")])
+# quru.run$Precip.pX09.pX11 <- rowMeans(quru.run[,c("Precip.X09.prev", "Precip.X10.prev", "Precip.X11.prev")])
+# quru.run$Precip.pX12.X02 <- rowMeans(quru.run[,c("Precip.X12.prev", "Precip.X01", "Precip.X02")])
+# quru.run$Precip.X03.X05 <- rowMeans(quru.run[,c("Precip.X03", "Precip.X04", "Precip.X05")])
+# quru.run$Precip.X06.X08 <- rowMeans(quru.run[,c("Precip.X06", "Precip.X07", "Precip.X08")])
+# quru.run$Precip.X09.X11 <- rowMeans(quru.run[,c("Precip.X09", "Precip.X10", "Precip.X11")])
 
 
 # Making vectors with the column names of the temp & precip months of interest
@@ -80,7 +80,7 @@ length(temp.col.ind)
 # quru.run$Tavg.yr <- rowMeans(quru.run[,temp.col.ind])
 # quru.run$Precip.yr <- rowSums(quru.run[,precip.col.ind])
 
-write.csv(quru.run, "Inputs/QURU_AllSites_1990-2011.csv", row.names=F)
+# write.csv(quru.run, "Inputs/QURU_AllSites_1990-2011.csv", row.names=F)
 
 #############
 # Reading in Data
@@ -332,7 +332,7 @@ temp.effect <- function(TEMP,ta1,tb1)
        { t(exp(-0.5*((t(TEMP)-ta1)/tb1)^2))  }
 
 precip.effect <- function(PRECIP,FLOW,pa1,pb1,pc1)
-       { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) }
+       { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2) }
 
 # precip.effect <- function(PRECIP,pa1,pb1)
        # { (1/(1+((PRECIP)/pa1)^pb1))  }
@@ -377,11 +377,11 @@ plot(quru.run$BAI ~ rowSums(quru.run[,precip.col]), xlab="Total Precip Mar-Oct",
 x.precip <- array(dim=c(100,length(temp.col.ind)))
 x.precip[1:100,] <- seq(0, 500, length.out=100)
 flow.precip <- mean(quru.run$flow, na.rm=T)
-y.precip <- precip.effect(x.precip, flow.precip, results$best_pars$pa1, results$best_pars$pb1, , results$best_pars$pc1)
+y.precip <- t(precip.effect(x.precip, flow.precip, results$best_pars$pa1, results$best_pars$pb1, results$best_pars$pc1))
 dim(y.precip)
 summary(y.precip)
 
-pdf( paste(run.label, " - Climate Precipitation Effect.pdf", sep=""), width=12, height=9)
+pdf(file.path("Figures", paste(run.label, " - Climate Precipitation Effect.pdf", sep="")), width=12, height=9)
 par(mfrow=c(2,3))
 for(i in 1:length(temp.col))
 	{	plot(x.precip[,i],y.precip[,i], ylim=c(0,1), xlab="Precip (mm)", ylab="BAI", type="l", lwd=2, main=precip.col[i])

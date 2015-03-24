@@ -19,51 +19,51 @@ library(likelihood)
 
 run.label <- "NYSY_Full_Season"
 
-#############
-# Reading in Test Data & some formating
-all.data <-read.csv("../RawInputs/CARCA_CoreData_Climate_Month_Wide.csv")
-all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
-all.data$BA.tree.cm2 <- all.data$BA.tree/100
-all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
-summary(all.data)
-dim(all.data)
+# #############
+# # Reading in Test Data & some formating
+# all.data <-read.csv("../RawInputs/CARCA_CoreData_Climate_Month_Wide.csv")
+# all.data[,substr(names(all.data),1,4)=="Tavg"] <- all.data[,substr(names(all.data),1,4)=="Tavg"]+273.15
+# all.data$BA.tree.cm2 <- all.data$BA.tree/100
+# all.data$Site.Trans <- as.factor(substr(all.data$PlotID,1,4))
+# summary(all.data)
+# dim(all.data)
 
-#############
-# Subsetting just NYSY data
-nysy.all <- all.data[all.data$Spp=="NYSY", ]
-summary(nysy.all)
-dim(nysy.all)
+# #############
+# # Subsetting just NYSY data
+# nysy.all <- all.data[all.data$Spp=="NYSY", ]
+# summary(nysy.all)
+# dim(nysy.all)
 
-# Subsetting only complete cases & a small range of years
-nysy.run <- nysy.all[complete.cases(nysy.all) & nysy.all$Year>=1990 & nysy.all$Year<=2011,]
-summary(nysy.run)
-dim(nysy.run)
+# # Subsetting only complete cases & a small range of years
+# nysy.run <- nysy.all[complete.cases(nysy.all) & nysy.all$Year>=1990 & nysy.all$Year<=2011,]
+# summary(nysy.run)
+# dim(nysy.run)
 
-#############
-# Vector with names of Months of the year
-months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
+# #############
+# # Vector with names of Months of the year
+# months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
 
-# Selecting which previous and current year months to include in model
-months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
-months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
-months.use <- c(months.prev, months.curr)
+# # Selecting which previous and current year months to include in model
+# months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
+# months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
+# months.use <- c(months.prev, months.curr)
 
 seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
 seasons
 
-nysy.run$Tavg.pX06.pX08 <- rowMeans(nysy.run[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
-nysy.run$Tavg.pX09.pX11 <- rowMeans(nysy.run[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
-nysy.run$Tavg.pX12.X02 <- rowMeans(nysy.run[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
-nysy.run$Tavg.X03.X05 <- rowMeans(nysy.run[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
-nysy.run$Tavg.X06.X08 <- rowMeans(nysy.run[,c("Tavg.X06", "Tavg.X07", "Tavg.X08")])
-nysy.run$Tavg.X09.X11 <- rowMeans(nysy.run[,c("Tavg.X09", "Tavg.X10", "Tavg.X11")])
+# nysy.run$Tavg.pX06.pX08 <- rowMeans(nysy.run[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
+# nysy.run$Tavg.pX09.pX11 <- rowMeans(nysy.run[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
+# nysy.run$Tavg.pX12.X02 <- rowMeans(nysy.run[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
+# nysy.run$Tavg.X03.X05 <- rowMeans(nysy.run[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
+# nysy.run$Tavg.X06.X08 <- rowMeans(nysy.run[,c("Tavg.X06", "Tavg.X07", "Tavg.X08")])
+# nysy.run$Tavg.X09.X11 <- rowMeans(nysy.run[,c("Tavg.X09", "Tavg.X10", "Tavg.X11")])
 
-nysy.run$Precip.pX06.pX08 <- rowMeans(nysy.run[,c("Precip.X06.prev", "Precip.X07.prev", "Precip.X08.prev")])
-nysy.run$Precip.pX09.pX11 <- rowMeans(nysy.run[,c("Precip.X09.prev", "Precip.X10.prev", "Precip.X11.prev")])
-nysy.run$Precip.pX12.X02 <- rowMeans(nysy.run[,c("Precip.X12.prev", "Precip.X01", "Precip.X02")])
-nysy.run$Precip.X03.X05 <- rowMeans(nysy.run[,c("Precip.X03", "Precip.X04", "Precip.X05")])
-nysy.run$Precip.X06.X08 <- rowMeans(nysy.run[,c("Precip.X06", "Precip.X07", "Precip.X08")])
-nysy.run$Precip.X09.X11 <- rowMeans(nysy.run[,c("Precip.X09", "Precip.X10", "Precip.X11")])
+# nysy.run$Precip.pX06.pX08 <- rowMeans(nysy.run[,c("Precip.X06.prev", "Precip.X07.prev", "Precip.X08.prev")])
+# nysy.run$Precip.pX09.pX11 <- rowMeans(nysy.run[,c("Precip.X09.prev", "Precip.X10.prev", "Precip.X11.prev")])
+# nysy.run$Precip.pX12.X02 <- rowMeans(nysy.run[,c("Precip.X12.prev", "Precip.X01", "Precip.X02")])
+# nysy.run$Precip.X03.X05 <- rowMeans(nysy.run[,c("Precip.X03", "Precip.X04", "Precip.X05")])
+# nysy.run$Precip.X06.X08 <- rowMeans(nysy.run[,c("Precip.X06", "Precip.X07", "Precip.X08")])
+# nysy.run$Precip.X09.X11 <- rowMeans(nysy.run[,c("Precip.X09", "Precip.X10", "Precip.X11")])
 
 
 # Making vectors with the column names of the temp & precip months of interest
@@ -80,7 +80,7 @@ length(temp.col.ind)
 # nysy.run$Tavg.yr <- rowMeans(nysy.run[,temp.col.ind])
 # nysy.run$Precip.yr <- rowSums(nysy.run[,precip.col.ind])
 
-write.csv(nysy.run, "Inputs/NYSY_AllSites_1990-2011.csv", row.names=F)
+# write.csv(nysy.run, "Inputs/NYSY_AllSites_1990-2011.csv", row.names=F)
 
 #############
 # Reading in Data
@@ -231,7 +231,6 @@ results$R2
 ####################################################################################################################
 load(file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 
-
 # Looking at Residuals and Parameters
 #windows()
 plot(results$source_data$predicted,results$source_data$BAI,xlab="Predicted",ylab="Observed")
@@ -332,7 +331,7 @@ temp.effect <- function(TEMP,ta1,tb1)
        { t(exp(-0.5*((t(TEMP)-ta1)/tb1)^2))  }
 
 precip.effect <- function(PRECIP,FLOW,pa1,pb1,pc1)
-       { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2)) }
+       { exp(-0.5*((t(PRECIP+pc1*FLOW*PRECIP)-pa1)/pb1)^2) }
 
 # precip.effect <- function(PRECIP,pa1,pb1)
        # { (1/(1+((PRECIP)/pa1)^pb1))  }
@@ -377,11 +376,11 @@ plot(nysy.run$BAI ~ rowSums(nysy.run[,precip.col]), xlab="Total Precip Mar-Oct",
 x.precip <- array(dim=c(100,length(temp.col.ind)))
 x.precip[1:100,] <- seq(0, 500, length.out=100)
 flow.precip <- mean(nysy.run$flow, na.rm=T)
-y.precip <- precip.effect(x.precip, flow.precip, results$best_pars$pa1, results$best_pars$pb1, , results$best_pars$pc1)
+y.precip <- t(precip.effect(x.precip, flow.precip, results$best_pars$pa1, results$best_pars$pb1, results$best_pars$pc1))
 dim(y.precip)
 summary(y.precip)
 
-pdf( paste(run.label, " - Climate Precipitation Effect.pdf", sep=""), width=12, height=9)
+pdf(file.path("Figures", paste(run.label, " - Climate Precipitation Effect.pdf", sep="")), width=12, height=9)
 par(mfrow=c(2,3))
 for(i in 1:length(temp.col))
 	{	plot(x.precip[,i],y.precip[,i], ylim=c(0,1), xlab="Precip (mm)", ylab="BAI", type="l", lwd=2, main=precip.col[i])
