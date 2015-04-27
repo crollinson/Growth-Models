@@ -105,6 +105,24 @@ length(unique(model.data$TreeID))
 # load("../Annual/Outputs/QURU_Full_Ann_Results.Rdata")
 # quru.results <- results
 
+# #-----------------------------------
+# # Looking at autocorrelation quickly
+# #-----------------------------------
+# # Calculating residuals
+# acru.results$source_data$resid <- acru.results$source_data$BAI - acru.results$source_data$predicted
+# bele.results$source_data$resid <- bele.results$source_data$BAI - bele.results$source_data$predicted
+# nysy.results$source_data$resid <- nysy.results$source_data$BAI - nysy.results$source_data$predicted
+# qupr.results$source_data$resid <- qupr.results$source_data$BAI - qupr.results$source_data$predicted
+# quru.results$source_data$resid <- quru.results$source_data$BAI - quru.results$source_data$predicted
+
+# acf(acru.results$source_data$resid, lag.max=20)
+# acf(bele.results$source_data$resid, lag.max=20)
+# acf(nysy.results$source_data$resid, lag.max=20)
+# acf(qupr.results$source_data$resid, lag.max=20)
+# acf(quru.results$source_data$resid, lag.max=20)
+# #-----------------------------------
+
+
 # acru.pars <- data.frame(Species="ACRU", Parameter=names(unlist(acru.results$best_pars)), MLE=unlist(acru.results$best_pars), Lower.Lim=unlist(acru.results$lower_limits), Upper.Lim=unlist(acru.results$upper_limits), Lower.Bound=unlist(acru.results$par_lo), Upper.Bound=unlist(acru.results$par_hi))
 
 # bele.pars <- data.frame(Species="BELE", Parameter=names(unlist(bele.results$best_pars)), MLE=unlist(bele.results$best_pars), Lower.Lim=unlist(bele.results$lower_limits), Upper.Lim=unlist(bele.results$upper_limits), Lower.Bound=unlist(bele.results$par_lo), Upper.Bound=unlist(bele.results$par_hi))
@@ -129,19 +147,19 @@ summary(param.est)
 # Sampling from the range (lower_lim to upper_lim) for each parameter
 ####################################################################
 # param.est[param.est$Species=="QURU",]
+# n = number of draws to do
+n <- 500
 
-param.distrib <- data.frame(array(dim=c(nrow(param.est),202))) # ncol= num runs + parameter + species
-names(param.distrib) <- c("Species", "Parameter", paste("X", 1:200, sep=""))
+param.distrib <- data.frame(array(dim=c(nrow(param.est),n+2))) # ncol= num runs + parameter + species
+names(param.distrib) <- c("Species", "Parameter", paste("X", 1:n, sep=""))
 names(param.distrib)
 param.distrib[,c("Species", "Parameter")] <- param.est[,c("Species", "Parameter")]
 param.distrib[1:30,1:4]
 
-# n = number of draws to do
-n <- 200
 
 for(s in unique(param.distrib$Species)){
 	for(j in unique(param.distrib$Parameter)){
-		p.range <- seq(from=param.est[param.est$Species==s & param.est$Parameter==j, "Lower.Lim"], to=param.est[param.est$Species==s & param.est$Parameter==j, "Upper.Lim"], length.out=500)
+		p.range <- seq(from=param.est[param.est$Species==s & param.est$Parameter==j, "Lower.Lim"], to=param.est[param.est$Species==s & param.est$Parameter==j, "Upper.Lim"], length.out=n*3)
 
 		temp <- sample(p.range, n)
 		param.distrib[param.distrib$Species==s & param.distrib$Parameter==j, 3:(3+n-1)] <- temp
@@ -151,7 +169,7 @@ for(s in unique(param.distrib$Species)){
 param.distrib[1:30,1:10]
 summary(param.distrib[,1:20])
 
-param.means <- rowMeans(param.distrib[,3:202])
+param.means <- rowMeans(param.distrib[,3:ncol(param.distrib)])
 
 
 ##################################################################################
@@ -173,7 +191,7 @@ names(aut.response) <- "x.auto"
 
 
 for(s in unique(param.distrib$Species)){
-	aut.response <- aut.predict(s, x.auto, aut.response, param.est, param.distrib)
+	aut.response <- aut.predict(s, x.auto, aut.response, param.est, param.distrib, n=250)
 	}
 
 summary(aut.response)
@@ -215,7 +233,7 @@ pdf("Figures/Species Comparisons Full Model Annual - Autogenic.pdf")
 ggplot(data=aut.stack) + large.axes +
 #	geom_ribbon(aes(x=x.auto, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
 	geom_ribbon(aes(x=x.auto, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.auto, y=MLE, color=Species), size=1) +
+	geom_line(aes(x=x.auto, y=MLE, color=Species, linetype=Species), size=1) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1), breaks=seq(0, 1, 0.25)) +
@@ -252,7 +270,7 @@ names(temp.response) <- "x.temp"
 temp.response[,1] <- x.temp
 
 for(s in unique(param.distrib$Species)){
-	temp.response <- temp.ann(s, x.temp, temp.response, param.est, param.distrib)	
+	temp.response <- temp.ann(s, x.temp, temp.response, param.est, param.distrib, n=250)	
 }
 
 summary(temp.response)
@@ -287,7 +305,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Figures/Species Comparisons Full Model Annual - Temperature.pdf")
 ggplot(data=temp.stack) + large.axes +
 	geom_ribbon(aes(x=x.temp-273, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.temp-273, y=MLE, color=Species), size=1.5) +
+	geom_line(aes(x=x.temp-273, y=MLE, color=Species, linetype=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.0)) +
@@ -316,7 +334,7 @@ precip.response[,1] <- x.precip
 
 for(s in unique(param.distrib$Species)){
 	flow <- mean(model.data$flow)
-	precip.response <- precip.ann(s, x.precip, flow, precip.response, param.est, param.distrib)
+	precip.response <- precip.ann(s, x.precip, flow, precip.response, param.est, param.distrib, n=250)
 	}
 
 summary(precip.response)
@@ -349,7 +367,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Figures/Species Comparisons Full Model Annual - Precipitation.pdf")
 ggplot(data=precip.stack) + large.axes +
 	geom_ribbon(aes(x=x.precip, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.precip, y=MLE, color=Species), size=2) +
+	geom_line(aes(x=x.precip, y=MLE, color=Species, linetype=Species), size=2) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Annual Precip (mm)") + 
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.), breaks=c(0,0.25,0.5,0.75,1)) +
@@ -380,7 +398,7 @@ comp.response[,1] <- x.relba
 for(s in unique(param.distrib$Species)){
 	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"]), max(model.data[model.data$Spp==s, "RelBA"]), length=250)
 	plot.ba <- mean(model.data$BA.m2ha)
-	comp.response <- comp.predict(s, x.relba, plot.ba, comp.response, param.est, param.distrib)
+	comp.response <- comp.predict(s, x.relba, plot.ba, comp.response, param.est, param.distrib, n=250)
 	}
 summary(comp.response)
 
@@ -418,7 +436,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Figures/Species Comparisons Full Model Annual - Competition.pdf")
 ggplot(data=comp.stack) + large.axes +
 	geom_ribbon(aes(x=x.relba, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.relba, y=MLE, color=Species), size=1.5) +
+	geom_line(aes(x=x.relba, y=MLE, color=Species, linetype=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Relative Basal Area") + 
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0, 1.0)) +

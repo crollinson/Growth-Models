@@ -37,18 +37,19 @@ summary(param.est)
 ####################################################################
 # param.est[param.est$Species=="QURU",]
 
-param.distrib <- data.frame(array(dim=c(nrow(param.est),202))) # ncol= num runs + parameter + species.conds
-names(param.distrib) <- c("Species", "Parameter", paste("X", 1:200, sep=""))
+# n = number of draws to do
+n <- 500
+
+param.distrib <- data.frame(array(dim=c(nrow(param.est),n+2))) # ncol= num runs + parameter + species.conds
+names(param.distrib) <- c("Species", "Parameter", paste("X", 1:n, sep=""))
 names(param.distrib)
 param.distrib[,c("Species", "Parameter")] <- param.est[,c("Species", "Parameter")]
 param.distrib[1:30,1:4]
 
-# n = number of draws to do
-n <- 200
 
 for(s in unique(param.distrib$Species)){
 	for(j in unique(param.distrib$Parameter)){
-		p.range <- seq(from=param.est[param.est$Species==s & param.est$Parameter==j, "Lower.Lim"], to=param.est[param.est$Species==s & param.est$Parameter==j, "Upper.Lim"], length.out=500)
+		p.range <- seq(from=param.est[param.est$Species==s & param.est$Parameter==j, "Lower.Lim"], to=param.est[param.est$Species==s & param.est$Parameter==j, "Upper.Lim"], length.out=n*3)
 
 		temp <- sample(p.range, n)
 		param.distrib[param.distrib$Species==s & param.distrib$Parameter==j, 3:(3+n-1)] <- temp
@@ -58,7 +59,7 @@ for(s in unique(param.distrib$Species)){
 param.distrib[1:30,1:10]
 summary(param.distrib[,1:20])
 
-param.means <- rowMeans(param.distrib[,3:202])
+param.means <- rowMeans(param.distrib[,3:ncol(param.distrib)])
 
 
 ##################################################################################
@@ -123,7 +124,7 @@ for(s in unique(param.distrib$Species)){
 	PRECIP= species.conds[species.conds$Species==s, "Precip"]
 	FLOW=species.conds[species.conds$Species==s, "Flow"]
 
-	full.response.all.temp <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.temp, param.est, param.distrib)	
+	full.response.all.temp <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.temp, param.est, param.distrib, n=250)	
 	}
 
 summary(full.response.all.temp)
@@ -158,7 +159,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Species Comparisons Full Model - Full Temperature All Sizes.pdf")
 ggplot(data=full.temp.stack) + large.axes +
 	geom_ribbon(aes(x=x.temp, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.temp, y=MLE, color=Species), size=2) +
+	geom_line(aes(x=x.temp, y=MLE, color=Species, linetype=Species), size=2) +
 	scale_color_manual(values=species.colors, guide=guide_legend(ncol=2)) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Annual Mean Temp (K)") + 
 	# scale_y_continuous(limits=c(0,1600)) +
@@ -189,7 +190,7 @@ for(s in unique(param.distrib$Species)){
 	PRECIP= x.precip
 	FLOW= species.conds[species.conds$Species==s, "Flow"]
 
-	full.response.all.precip <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.precip, param.est, param.distrib)	
+	full.response.all.precip <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.precip, param.est, param.distrib, n=250)	
 
 	}
 
@@ -226,7 +227,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Species Comparisons Full Model - Full Precipitation All Sizes.pdf")
 ggplot(data=full.precip.stack) + large.axes +
 	geom_ribbon(aes(x=x.precip, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.precip, y=MLE, color=Species), size=2) +
+	geom_line(aes(x=x.precip, y=MLE, color=Species, linetype=Species), size=2) +
 	scale_color_manual(values=species.colors, guide=guide_legend(ncol=2)) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Annual Total Precip (mm)") + #scale_y_continuous(limits=c(0,1600)) +
 	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
@@ -258,6 +259,7 @@ full.response.all.comp[,1] <- x.relba
 
 
 for(s in unique(param.distrib$Species)){
+	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"]), max(model.data[model.data$Spp==s, "RelBA"]), length=250)
 	SIZE= species.conds[species.conds$Species==s, "BA.All"]
 	RS= x.relba
 	BA.PLOT=species.conds[species.conds$Species==s, "PlotBA.All"]
@@ -265,16 +267,19 @@ for(s in unique(param.distrib$Species)){
 	PRECIP=species.conds[species.conds$Species==s, "Precip"]
 	FLOW= species.conds[species.conds$Species==s, "Flow"]
 
-	full.response.all.comp <- full.model.annual.bai(var=RS, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.comp, param.est, param.distrib)	
+	full.response.all.comp <- full.model.annual.bai(var=RS, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.comp, param.est, param.distrib, n=250)	
 	}
 
 summary(full.response.all.comp)
 
-full.comp.stack <- stack(full.response.all.comp[,substr(names(full.response.all.comp),6,8)=="MLE"])
-names(full.comp.stack) <- c("MLE", "Species")
+
+full.comp.stack <- stack(full.response.all.comp[,substr(names(full.response.all.comp),6,8)=="VAR"])
+names(full.comp.stack) <- c("x.relba", "Species")
 full.comp.stack$Species <- as.factor(substr(full.comp.stack$Species, 1, 4))
-full.comp.stack$x.relba <- full.response.all.comp$x.relba
 summary(full.comp.stack)
+
+full.comp.stack1 <- stack(full.response.all.comp[,substr(names(full.response.all.comp),6,8)=="MLE"])
+summary(full.comp.stack1)
 
 full.comp.stack2 <- stack(full.response.all.comp[,substr(names(full.response.all.comp),6,11)=="CI.low"])
 summary(full.comp.stack2)
@@ -288,6 +293,7 @@ summary(full.comp.stack4)
 full.comp.stack5 <- stack(full.response.all.comp[,substr(names(full.response.all.comp),6,8)=="Max"])
 summary(full.comp.stack5)
 
+full.comp.stack$MLE <- full.comp.stack1[,1]
 full.comp.stack$CI.low <- full.comp.stack2[,1]
 full.comp.stack$CI.hi <- full.comp.stack3[,1]
 full.comp.stack$Min <- full.comp.stack4[,1]
@@ -300,7 +306,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Species Comparisons Full Model - Full Competition RelBA All Sizes.pdf")
 ggplot(data=full.comp.stack) + large.axes +
 	geom_ribbon(aes(x=x.relba, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x= x.relba, y=MLE, color=Species), size=2) +
+	geom_line(aes(x= x.relba, y=MLE, color=Species, linetype=Species), size=2) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Relative Basal Area") + 	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
 	theme(legend.position=c(0.2,0.8), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
@@ -327,7 +333,7 @@ full.response.all.auto[,1] <- x.auto
 
 
 for(s in unique(param.distrib$Species)){
-	
+	x.auto <- seq(0, max(model.data[model.data$Spp==s, "BA.tree.cm2"]), length=250)	
 	SIZE= x.auto
 	RS= species.conds[species.conds$Species==s, "RelBA.All"]
 	BA.PLOT=species.conds[species.conds$Species==s, "PlotBA.All"]
@@ -335,16 +341,18 @@ for(s in unique(param.distrib$Species)){
 	PRECIP=species.conds[species.conds$Species==s, "Precip"]
 	FLOW= species.conds[species.conds$Species==s, "Flow"]
 
-	full.response.all.auto <- full.model.annual.bai(var=SIZE, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.auto, param.est, param.distrib)	
+	full.response.all.auto <- full.model.annual.bai(var=SIZE, s, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, full.response.all.auto, param.est, param.distrib, n=250)	
 	}
 
 summary(full.response.all.auto)
 
-full.auto.stack <- stack(full.response.all.auto[,substr(names(full.response.all.auto),6,8)=="MLE"])
-names(full.auto.stack) <- c("MLE", "Species")
-full.auto.stack$Species <- as.factor(substr(full.auto.stack$Species, 1, 4))
-full.auto.stack$x.auto <- full.response.all.auto$x.auto
+full.auto.stack <- stack(full.response.all.auto[,substr(names(full.response.all.auto),6,8)=="VAR"])
+names(full.auto.stack) <- c("x.auto", "Species")
+full.auto.stack $Species <- as.factor(substr(full.auto.stack $Species, 1, 4))
 summary(full.auto.stack)
+
+full.auto.stack1 <- stack(full.response.all.auto[,substr(names(full.response.all.auto),6,8)=="MLE"])
+summary(full.auto.stack1)
 
 full.auto.stack2 <- stack(full.response.all.auto[,substr(names(full.response.all.auto),6,11)=="CI.low"])
 summary(full.auto.stack2)
@@ -358,6 +366,7 @@ summary(full.auto.stack4)
 full.auto.stack5 <- stack(full.response.all.auto[,substr(names(full.response.all.auto),6,8)=="Max"])
 summary(full.auto.stack5)
 
+full.auto.stack$MLE <- full.auto.stack1[,1]
 full.auto.stack$CI.low <- full.auto.stack2[,1]
 full.auto.stack$CI.hi <- full.auto.stack3[,1]
 full.auto.stack$Min <- full.auto.stack4[,1]
@@ -370,7 +379,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Species Comparisons Full Model - Full Autogenic All Sizes.pdf")
 ggplot(data=full.auto.stack) + large.axes +
 	geom_ribbon(aes(x=x.auto, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x= x.auto, y=MLE, color=Species), size=2) +
+	geom_line(aes(x= x.auto, y=MLE, color=Species, linetype=Species), size=2) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_y_continuous(breaks=c(0,2500,5000)) +
 	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
@@ -407,11 +416,11 @@ for(s in unique(param.distrib$Species)){
 	PRECIP.max= max(model.data$Precip.PRISM.sum)
 
 
-	temp.response.mean <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP.mean, FLOW, temp.response.mean, param.est, param.distrib)	
+	temp.response.mean <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP.mean, FLOW, temp.response.mean, param.est, param.distrib, n=50)	
 
-	temp.response.min <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP.min, FLOW, temp.response.min, param.est, param.distrib)	
+	temp.response.min <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP.min, FLOW, temp.response.min, param.est, param.distrib, n=50)	
 
-	temp.response.max <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP.max, FLOW, temp.response.max, param.est, param.distrib)	
+	temp.response.max <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.PLOT, TEMP, PRECIP.max, FLOW, temp.response.max, param.est, param.distrib, n=50)	
 	}
 
 summary(temp.response.mean)
@@ -505,6 +514,42 @@ summary(temp.max.stack)
 temp.stack <- rbind(temp.mean.stack, temp.min.stack, temp.max.stack)
 summary(temp.stack)
 
+# ---------------------
+# Some statistics for the manuscript
+# ---------------------
+# Some statistics on NYSY
+nysy.mean <- temp.stack[temp.stack$Species=="NYSY" & temp.stack$Precip=="Mean",c("MLE")]
+nysy.min.dif <- nysy.mean - temp.stack[temp.stack$Species=="NYSY" & temp.stack$Precip=="Minimum","MLE"]
+
+summary(nysy.min.dif)
+mean(nysy.min.dif[,"MLE"]/nysy.mean)
+sd(nysy.min.dif[,"MLE"]/nysy.mean)
+
+# ---------------------
+qupr.mean <- temp.stack[temp.stack$Species=="QUPR" & temp.stack$Precip=="Mean",c("MLE")]
+qupr.min <- temp.stack[temp.stack$Species=="QUPR" & temp.stack$Precip=="Minimum","MLE"]
+
+qupr.diff <- qupr.mean - qupr.min
+summary(qupr.diff)
+mean(qupr.diff)
+sd(qupr.diff)
+
+qupr.max.dif <- (qupr.mean - temp.stack[temp.stack$Species=="QUPR" & temp.stack$Precip=="Maximum",c("MLE", "CI.low","CI.hi")])
+summary(qupr.max.dif)
+mean(qupr.max.dif[,"MLE"])
+sd(qupr.max.dif[,"MLE"])
+# ---------------------
+# QURU
+# ---------------------
+quru.max <- temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Maximum",c("MLE")]
+quru.min <-  temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Minimum",c("MLE")]
+summary(quru.min.dif[,1])
+# ---------------------
+quru.diff <- quru.max - quru.min
+summary(quru.diff)
+mean(quru.diff)
+sd(quru.diff)
+
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Annual Precipitation and Temperature.pdf", width=11, height=8.5)
@@ -548,11 +593,11 @@ for(s in unique(param.distrib$Species)){
 	TEMP.max= max(model.data$Tavg)+273.15
 
 
-	precip.response.mean <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP.mean, PRECIP, FLOW, precip.response.mean, param.est, param.distrib)	
+	precip.response.mean <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP.mean, PRECIP, FLOW, precip.response.mean, param.est, param.distrib,n=250)	
 
-	precip.response.min <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP.min, PRECIP, FLOW, precip.response.min, param.est, param.distrib)	
+	precip.response.min <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP.min, PRECIP, FLOW, precip.response.min, param.est, param.distrib,n=250)	
 
-	precip.response.max <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP.max, PRECIP, FLOW, precip.response.max, param.est, param.distrib)	
+	precip.response.max <- full.model.annual.bai(var=PRECIP, s, SIZE, RS, BA.PLOT, TEMP.max, PRECIP, FLOW, precip.response.max, param.est, param.distrib,n=250)	
 	}
 
 summary(precip.response.mean)
@@ -658,4 +703,682 @@ ggplot(data=precip.stack) + large.axes + facet_wrap(~ Species) +
 	scale_x_continuous(name="Total Annual Precipitation (mm)", breaks=c(800,1200,1600)) + 
 	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
 	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Temperature", color="Temperature", linetype="Temperature")
+dev.off()
+
+
+
+##################################################################################
+# Temperature with different Competition Status
+##################################################################################
+# Data frame where each run will be placed
+full.temp <- data.frame(array(dim=c(length(x.temp),1)))
+row.names(full.temp) <- x.temp
+
+# Data frame where the summary (mean & SD) of the runs will be placed
+temp.response.mean <- temp.response.min <- temp.response.max <- data.frame(array(dim=c(length(x.temp),1)))
+names(temp.response.mean) <- names(temp.response.max) <- names(temp.response.min) <- "x.temp"
+temp.response.mean[,1] <- temp.response.max[,1] <- temp.response.min[,1] <- x.temp
+
+
+for(s in unique(param.distrib$Species)){
+
+	SIZE= species.conds[species.conds$Species==s, "BA.All"]
+	BA.PLOT=species.conds[species.conds$Species==s, "PlotBA.All"]
+	TEMP=x.temp
+	PRECIP=mean(model.data$Precip.PRISM.sum)
+	FLOW=species.conds[species.conds$Species==s, "Flow"]
+
+	RS.5=0.5 
+	RS.25=0.25 
+	RS.75=0.75 
+
+
+	temp.response.mean <- full.model.annual.bai(var=TEMP, s, SIZE, RS.5, BA.PLOT, TEMP, PRECIP, FLOW, temp.response.mean, param.est, param.distrib, n=250)	
+
+	temp.response.min <- full.model.annual.bai(var=TEMP, s, SIZE, RS.25, BA.PLOT, TEMP, PRECIP, FLOW, temp.response.min, param.est, param.distrib, n=250)	
+
+	temp.response.max <- full.model.annual.bai(var=TEMP, s, SIZE, RS.5, BA.PLOT, TEMP, PRECIP, FLOW, temp.response.max, param.est, param.distrib, n=250)	
+	}
+
+summary(temp.response.mean)
+summary(temp.response.min)
+summary(temp.response.max)
+
+# -----------------------
+temp.mean.stack <- stack(temp.response.mean[,substr(names(temp.response.mean),6,8)=="MLE"])
+names(temp.mean.stack) <- c("MLE", "Species")
+temp.mean.stack$Species <- as.factor(substr(temp.mean.stack$Species, 1, 4))
+temp.mean.stack$x.temp <- temp.response.mean$x.temp
+summary(temp.mean.stack)
+
+temp.mean.stack2 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,11)=="CI.low"])
+summary(temp.mean.stack2)
+
+temp.mean.stack3 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,12)=="CI.high"])
+summary(temp.mean.stack3)
+
+temp.mean.stack4 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,8)=="Min"])
+summary(temp.mean.stack4)
+
+temp.mean.stack5 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,8)=="Max"])
+summary(temp.mean.stack5)
+
+temp.mean.stack$CI.low <- temp.mean.stack2[,1]
+temp.mean.stack$CI.hi <- temp.mean.stack3[,1]
+temp.mean.stack$Min <- temp.mean.stack4[,1]
+temp.mean.stack$Max <- temp.mean.stack5[,1]
+temp.mean.stack$RS <- as.factor("RS=0.5")
+
+summary(temp.mean.stack)
+# -----------------------
+# -----------------------
+temp.min.stack <- stack(temp.response.min[,substr(names(temp.response.min),6,8)=="MLE"])
+names(temp.min.stack) <- c("MLE", "Species")
+temp.min.stack$Species <- as.factor(substr(temp.min.stack$Species, 1, 4))
+temp.min.stack$x.temp <- temp.response.min$x.temp
+summary(temp.min.stack)
+
+temp.min.stack2 <- stack(temp.response.min[,substr(names(temp.response.min),6,11)=="CI.low"])
+summary(temp.min.stack2)
+
+temp.min.stack3 <- stack(temp.response.min[,substr(names(temp.response.min),6,12)=="CI.high"])
+summary(temp.min.stack3)
+
+temp.min.stack4 <- stack(temp.response.min[,substr(names(temp.response.min),6,8)=="Min"])
+summary(temp.min.stack4)
+
+temp.min.stack5 <- stack(temp.response.min[,substr(names(temp.response.min),6,8)=="Max"])
+summary(temp.min.stack5)
+
+temp.min.stack$CI.low <- temp.min.stack2[,1]
+temp.min.stack$CI.hi <- temp.min.stack3[,1]
+temp.min.stack$Min <- temp.min.stack4[,1]
+temp.min.stack$Max <- temp.min.stack5[,1]
+temp.min.stack$RS <- as.factor("RS=0.25")
+
+summary(temp.min.stack)
+# -----------------------
+# -----------------------
+temp.max.stack <- stack(temp.response.max[,substr(names(temp.response.max),6,8)=="MLE"])
+names(temp.max.stack) <- c("MLE", "Species")
+temp.max.stack$Species <- as.factor(substr(temp.max.stack$Species, 1, 4))
+temp.max.stack$x.temp <- temp.response.max$x.temp
+summary(temp.max.stack)
+
+temp.max.stack2 <- stack(temp.response.max[,substr(names(temp.response.max),6,11)=="CI.low"])
+summary(temp.max.stack2)
+
+temp.max.stack3 <- stack(temp.response.max[,substr(names(temp.response.max),6,12)=="CI.high"])
+summary(temp.max.stack3)
+
+temp.max.stack4 <- stack(temp.response.max[,substr(names(temp.response.max),6,8)=="Min"])
+summary(temp.max.stack4)
+
+temp.max.stack5 <- stack(temp.response.max[,substr(names(temp.response.max),6,8)=="Max"])
+summary(temp.max.stack5)
+
+temp.max.stack$CI.low <- temp.max.stack2[,1]
+temp.max.stack$CI.hi <- temp.max.stack3[,1]
+temp.max.stack$Min <- temp.max.stack4[,1]
+temp.max.stack$Max <- temp.max.stack5[,1]
+temp.max.stack$RS <- as.factor("RS=0.75")
+
+summary(temp.mean.stack)
+summary(temp.min.stack)
+summary(temp.max.stack)
+# -----------------------
+
+temp.stack <- rbind(temp.mean.stack, temp.min.stack, temp.max.stack)
+summary(temp.stack)
+
+species.colors <- c("purple", "blue", "green3", "orange", "red")
+
+pdf("Figures/Annual Temp vs. RelSize.pdf", width=11, height=8.5)
+ggplot(data=temp.stack) + large.axes + facet_wrap(~ Species) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=RS), alpha=0.2) +
+	geom_line(aes(x=x.temp-273.15, y=MLE, color=RS, linetype=RS), size=1) +
+	scale_color_manual(values=c("black", "red", "blue")) + 
+	scale_fill_manual(values=c("black", "red", "blue")) +
+#	scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
+	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
+	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Relative Size", color="Relative Size", linetype="Relative Size")
+dev.off()
+
+
+
+
+
+
+
+##################################################################################
+# Temperature Versus Plot Basal Area
+##################################################################################
+# Data frame where each run will be placed
+full.temp <- data.frame(array(dim=c(length(x.temp),1)))
+row.names(full.temp) <- x.temp
+
+# Data frame where the summary (mean & SD) of the runs will be placed
+temp.response.mean <- temp.response.min <- temp.response.max <- data.frame(array(dim=c(length(x.temp),1)))
+names(temp.response.mean) <- names(temp.response.max) <- names(temp.response.min) <- "x.temp"
+temp.response.mean[,1] <- temp.response.max[,1] <- temp.response.min[,1] <- x.temp
+
+
+for(s in unique(param.distrib$Species)){
+
+	SIZE= species.conds[species.conds$Species==s, "BA.All"]
+	RS=species.conds[species.conds$Species==s, "RelBA.All"] 
+	TEMP=x.temp
+	PRECIP=mean(model.data$Precip.PRISM.sum)
+	FLOW=species.conds[species.conds$Species==s, "Flow"]
+
+	BA.mean=mean(model.data$BA.m2ha.plot.live)
+	BA.min= min(model.data$BA.m2ha.plot.live)
+	BA.max= max(model.data$BA.m2ha.plot.live)
+
+
+	temp.response.mean <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.mean, TEMP, PRECIP, FLOW, temp.response.mean, param.est, param.distrib, n=250)	
+
+	temp.response.min <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.mean, TEMP, PRECIP, FLOW, temp.response.min, param.est, param.distrib, n=250)	
+
+	temp.response.max <- full.model.annual.bai(var=TEMP, s, SIZE, RS, BA.mean, TEMP, PRECIP, FLOW, temp.response.max, param.est, param.distrib, n=250)	
+	}
+
+summary(temp.response.mean)
+summary(temp.response.min)
+summary(temp.response.max)
+
+# -----------------------
+temp.mean.stack <- stack(temp.response.mean[,substr(names(temp.response.mean),6,8)=="MLE"])
+names(temp.mean.stack) <- c("MLE", "Species")
+temp.mean.stack$Species <- as.factor(substr(temp.mean.stack$Species, 1, 4))
+temp.mean.stack$x.temp <- temp.response.mean$x.temp
+summary(temp.mean.stack)
+
+temp.mean.stack2 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,11)=="CI.low"])
+summary(temp.mean.stack2)
+
+temp.mean.stack3 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,12)=="CI.high"])
+summary(temp.mean.stack3)
+
+temp.mean.stack4 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,8)=="Min"])
+summary(temp.mean.stack4)
+
+temp.mean.stack5 <- stack(temp.response.mean[,substr(names(temp.response.mean),6,8)=="Max"])
+summary(temp.mean.stack5)
+
+temp.mean.stack$CI.low <- temp.mean.stack2[,1]
+temp.mean.stack$CI.hi <- temp.mean.stack3[,1]
+temp.mean.stack$Min <- temp.mean.stack4[,1]
+temp.mean.stack$Max <- temp.mean.stack5[,1]
+temp.mean.stack$PlotBA <- as.factor("Mean")
+
+summary(temp.mean.stack)
+# -----------------------
+# -----------------------
+temp.min.stack <- stack(temp.response.min[,substr(names(temp.response.min),6,8)=="MLE"])
+names(temp.min.stack) <- c("MLE", "Species")
+temp.min.stack$Species <- as.factor(substr(temp.min.stack$Species, 1, 4))
+temp.min.stack$x.temp <- temp.response.min$x.temp
+summary(temp.min.stack)
+
+temp.min.stack2 <- stack(temp.response.min[,substr(names(temp.response.min),6,11)=="CI.low"])
+summary(temp.min.stack2)
+
+temp.min.stack3 <- stack(temp.response.min[,substr(names(temp.response.min),6,12)=="CI.high"])
+summary(temp.min.stack3)
+
+temp.min.stack4 <- stack(temp.response.min[,substr(names(temp.response.min),6,8)=="Min"])
+summary(temp.min.stack4)
+
+temp.min.stack5 <- stack(temp.response.min[,substr(names(temp.response.min),6,8)=="Max"])
+summary(temp.min.stack5)
+
+temp.min.stack$CI.low <- temp.min.stack2[,1]
+temp.min.stack$CI.hi <- temp.min.stack3[,1]
+temp.min.stack$Min <- temp.min.stack4[,1]
+temp.min.stack$Max <- temp.min.stack5[,1]
+temp.min.stack$PlotBA <- as.factor("Minimum")
+
+summary(temp.min.stack)
+# -----------------------
+# -----------------------
+temp.max.stack <- stack(temp.response.max[,substr(names(temp.response.max),6,8)=="MLE"])
+names(temp.max.stack) <- c("MLE", "Species")
+temp.max.stack$Species <- as.factor(substr(temp.max.stack$Species, 1, 4))
+temp.max.stack$x.temp <- temp.response.max$x.temp
+summary(temp.max.stack)
+
+temp.max.stack2 <- stack(temp.response.max[,substr(names(temp.response.max),6,11)=="CI.low"])
+summary(temp.max.stack2)
+
+temp.max.stack3 <- stack(temp.response.max[,substr(names(temp.response.max),6,12)=="CI.high"])
+summary(temp.max.stack3)
+
+temp.max.stack4 <- stack(temp.response.max[,substr(names(temp.response.max),6,8)=="Min"])
+summary(temp.max.stack4)
+
+temp.max.stack5 <- stack(temp.response.max[,substr(names(temp.response.max),6,8)=="Max"])
+summary(temp.max.stack5)
+
+temp.max.stack$CI.low <- temp.max.stack2[,1]
+temp.max.stack$CI.hi <- temp.max.stack3[,1]
+temp.max.stack$Min <- temp.max.stack4[,1]
+temp.max.stack$Max <- temp.max.stack5[,1]
+temp.max.stack$PlotBA <- as.factor("Maximum")
+
+summary(temp.mean.stack)
+summary(temp.min.stack)
+summary(temp.max.stack)
+# -----------------------
+
+temp.stack <- rbind(temp.mean.stack, temp.min.stack, temp.max.stack)
+summary(temp.stack)
+
+species.colors <- c("purple", "blue", "green3", "orange", "red")
+
+pdf("Figures/Annual Temperature Response vs PlotBA.pdf", width=11, height=8.5)
+ggplot(data=temp.stack) + large.axes + facet_wrap(~ Species) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=PlotBA), alpha=0.2) +
+	geom_line(aes(x=x.temp-273.15, y=MLE, color=PlotBA, linetype=PlotBA), size=1) +
+	scale_color_manual(values=c("black", "red", "blue")) + 
+	scale_fill_manual(values=c("black", "red", "blue")) +
+#	scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
+	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
+	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="PlotBA", color="PlotBA", linetype="PlotBA")
+dev.off()
+
+
+
+
+##################################################################################
+# Temperature Versus Size, Constant Plot BA
+##################################################################################
+x.temp <- seq(min(model.data$Tavg), max(model.data$Tavg), length.out=250)+273
+# Data frame where each run will be placed
+full.temp <- data.frame(array(dim=c(length(x.temp),1)))
+row.names(full.temp) <- x.temp
+
+# Data frame where the summary (mean & SD) of the runs will be placed
+temp.response.5 <- temp.response.10 <- temp.response.25 <- temp.response.50 <- data.frame(array(dim=c(length(x.temp),1)))
+temp.response.5[,1] <- temp.response.10[,1] <- temp.response.25[,1] <- temp.response.50[,1] <- x.temp
+names(temp.response.5) <- names(temp.response.10) <- names(temp.response.25) <- names(temp.response.50) <- "x.temp"
+
+
+for(s in unique(param.distrib$Species)){
+	BA.PLOT=mean(model.data$BA.m2ha.plot.live)
+	RS=1
+	TEMP=x.temp
+	PRECIP=mean(model.data$Precip.PRISM.sum)
+	FLOW=mean(model.data$flow)
+
+	SIZE.5cm= pi*(5^2)
+	SIZE.10cm= pi*(10^2)
+	SIZE.25cm= pi*(25^2)
+	SIZE.50cm= pi*(50^2)
+
+	temp.response.5 <- full.model.annual.bai(var=TEMP, s, SIZE.5cm, RS, BA.PLOT, TEMP, PRECIP, FLOW, temp.response.5, param.est, param.distrib, n=250)	
+
+	temp.response.10 <- full.model.annual.bai(var=TEMP, s, SIZE.10cm, RS, BA.PLOT, TEMP, PRECIP, FLOW, temp.response.10, param.est, param.distrib, n=250)	
+
+	temp.response.25 <- full.model.annual.bai(var=TEMP, s, SIZE.25cm, RS, BA.PLOT, TEMP, PRECIP, FLOW, temp.response.25, param.est, param.distrib, n=250)	
+
+	temp.response.50 <- full.model.annual.bai(var=TEMP, s, SIZE.50cm, RS, BA.PLOT, TEMP, PRECIP, FLOW, temp.response.50, param.est, param.distrib, n=250)	
+	}
+
+summary(temp.response.5)
+summary(temp.response.10)
+summary(temp.response.25)
+summary(temp.response.50)
+
+# -----------------------
+temp.5.stack <- stack(temp.response.5[,substr(names(temp.response.5),6,8)=="MLE"])
+names(temp.5.stack) <- c("MLE", "Species")
+temp.5.stack$Species <- as.factor(substr(temp.5.stack$Species, 1, 4))
+temp.5.stack$x.temp <- temp.response.5$x.temp
+summary(temp.5.stack)
+
+temp.5.stack2 <- stack(temp.response.5[,substr(names(temp.response.5),6,11)=="CI.low"])
+summary(temp.5.stack2)
+
+temp.5.stack3 <- stack(temp.response.5[,substr(names(temp.response.5),6,12)=="CI.high"])
+summary(temp.5.stack3)
+
+temp.5.stack4 <- stack(temp.response.5[,substr(names(temp.response.5),6,8)=="Min"])
+summary(temp.5.stack4)
+
+temp.5.stack5 <- stack(temp.response.5[,substr(names(temp.response.5),6,8)=="Max"])
+summary(temp.5.stack5)
+
+temp.5.stack$CI.low <- temp.5.stack2[,1]
+temp.5.stack$CI.hi <- temp.5.stack3[,1]
+temp.5.stack$Min <- temp.5.stack4[,1]
+temp.5.stack$Max <- temp.5.stack5[,1]
+temp.5.stack$DBH <- as.factor("5 cm")
+
+summary(temp.5.stack)
+# -----------------------
+temp.10.stack <- stack(temp.response.10[,substr(names(temp.response.10),6,8)=="MLE"])
+names(temp.10.stack) <- c("MLE", "Species")
+temp.10.stack$Species <- as.factor(substr(temp.10.stack$Species, 1, 4))
+temp.10.stack$x.temp <- temp.response.10$x.temp
+summary(temp.10.stack)
+
+temp.10.stack2 <- stack(temp.response.10[,substr(names(temp.response.10),6,11)=="CI.low"])
+summary(temp.10.stack2)
+
+temp.10.stack3 <- stack(temp.response.10[,substr(names(temp.response.10),6,12)=="CI.high"])
+summary(temp.10.stack3)
+
+temp.10.stack4 <- stack(temp.response.10[,substr(names(temp.response.10),6,8)=="Min"])
+summary(temp.10.stack4)
+
+temp.10.stack5 <- stack(temp.response.10[,substr(names(temp.response.10),6,8)=="Max"])
+summary(temp.10.stack5)
+
+temp.10.stack$CI.low <- temp.10.stack2[,1]
+temp.10.stack$CI.hi <- temp.10.stack3[,1]
+temp.10.stack$Min <- temp.10.stack4[,1]
+temp.10.stack$Max <- temp.10.stack5[,1]
+temp.10.stack$DBH <- as.factor("10 cm")
+
+summary(temp.10.stack)
+# -----------------------
+temp.25.stack <- stack(temp.response.25[,substr(names(temp.response.25),6,8)=="MLE"])
+names(temp.25.stack) <- c("MLE", "Species")
+temp.25.stack$Species <- as.factor(substr(temp.25.stack$Species, 1, 4))
+temp.25.stack$x.temp <- temp.response.25$x.temp
+summary(temp.25.stack)
+
+temp.25.stack2 <- stack(temp.response.25[,substr(names(temp.response.25),6,11)=="CI.low"])
+summary(temp.25.stack2)
+
+temp.25.stack3 <- stack(temp.response.25[,substr(names(temp.response.25),6,12)=="CI.high"])
+summary(temp.25.stack3)
+
+temp.25.stack4 <- stack(temp.response.25[,substr(names(temp.response.25),6,8)=="Min"])
+summary(temp.25.stack4)
+
+temp.25.stack5 <- stack(temp.response.25[,substr(names(temp.response.25),6,8)=="Max"])
+summary(temp.25.stack5)
+
+temp.25.stack$CI.low <- temp.25.stack2[,1]
+temp.25.stack$CI.hi <- temp.25.stack3[,1]
+temp.25.stack$Min <- temp.25.stack4[,1]
+temp.25.stack$Max <- temp.25.stack5[,1]
+temp.25.stack$DBH <- as.factor("25 cm")
+# -----------------------
+temp.50.stack <- stack(temp.response.50[,substr(names(temp.response.50),6,8)=="MLE"])
+names(temp.50.stack) <- c("MLE", "Species")
+temp.50.stack$Species <- as.factor(substr(temp.50.stack$Species, 1, 4))
+temp.50.stack$x.temp <- temp.response.50$x.temp
+summary(temp.50.stack)
+
+temp.50.stack2 <- stack(temp.response.50[,substr(names(temp.response.50),6,11)=="CI.low"])
+summary(temp.50.stack2)
+
+temp.50.stack3 <- stack(temp.response.50[,substr(names(temp.response.50),6,12)=="CI.high"])
+summary(temp.50.stack3)
+
+temp.50.stack4 <- stack(temp.response.50[,substr(names(temp.response.50),6,8)=="Min"])
+summary(temp.50.stack4)
+
+temp.50.stack5 <- stack(temp.response.50[,substr(names(temp.response.50),6,8)=="Max"])
+summary(temp.50.stack5)
+
+temp.50.stack$CI.low <- temp.50.stack2[,1]
+temp.50.stack$CI.hi <- temp.50.stack3[,1]
+temp.50.stack$Min <- temp.50.stack4[,1]
+temp.50.stack$Max <- temp.50.stack5[,1]
+temp.50.stack$DBH <- as.factor("50 cm")
+# -----------------------
+summary(temp.5.stack)
+summary(temp.10.stack)
+summary(temp.25.stack)
+summary(temp.50.stack)
+# -----------------------
+
+temp.stack <- rbind(temp.5.stack, temp.10.stack, temp.25.stack, temp.50.stack)
+summary(temp.stack)
+
+dbh.colors <- c("blue2", "purple2", "red3", "darkorange2", "green3")
+pdf("Figures/Annual Temperature Response vs Size 1.pdf", width=11, height=8.5)
+ggplot(data=temp.stack) + large.axes + facet_wrap(~ Species) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=DBH), alpha=0.2) +
+	geom_line(aes(x=x.temp-273.15, y=MLE, color=DBH, linetype=DBH), size=1) +
+	scale_color_manual(values=dbh.colors) + 
+	scale_fill_manual(values=dbh.colors) +
+	# scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
+	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
+	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="DBH", color="DBH", linetype="DBH")
+dev.off()
+
+species.colors <- c("purple", "blue", "green3", "orange", "red")
+
+pdf("Figures/Annual Temperature Response vs Size 2.pdf", width=11, height=8.5)
+ggplot(data=temp.stack) + large.axes + facet_wrap(~ DBH, nrow=1) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Species), alpha=0.2) +
+	geom_line(aes(x=x.temp-273.15, y=MLE, color=Species, linetype=Species), size=1) +
+	scale_color_manual(values=species.colors) + 
+	scale_fill_manual(values= species.colors) +
+	# scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
+	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
+	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
+	theme(legend.position=c(0.1,0.85), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species", color="Species", linetype="Species")
+dev.off()
+
+
+##################################################################################
+# Temperature Versus Size -- SUCCESSION SCENARIO
+##################################################################################
+x.temp <- seq(min(model.data$Tavg), max(model.data$Tavg), length.out=250)+273
+# Data frame where each run will be placed
+full.temp <- data.frame(array(dim=c(length(x.temp),1)))
+row.names(full.temp) <- x.temp
+
+# Data frame where the summary (mean & SD) of the runs will be placed
+temp.response.5 <- temp.response.10 <- temp.response.25 <- temp.response.50 <- data.frame(array(dim=c(length(x.temp),1)))
+temp.response.5[,1] <- temp.response.10[,1] <- temp.response.25[,1] <- temp.response.50[,1] <- x.temp
+names(temp.response.5) <- names(temp.response.10) <- names(temp.response.25) <- names(temp.response.50) <- "x.temp"
+
+
+for(s in unique(param.distrib$Species)){
+	BA.PLOT=mean(model.data$BA.m2ha.plot.live)
+	RS=1
+	TEMP=x.temp
+	PRECIP=mean(model.data$Precip.PRISM.sum)
+	FLOW=mean(model.data$flow)
+
+	SIZE.5cm= pi*(5^2)
+	SIZE.10cm= pi*(10^2)
+	SIZE.25cm= pi*(25^2)
+	SIZE.50cm= pi*(50^2)
+
+	BA.PLOT.early=min(model.data$BA.m2ha.plot.live)
+	BA.PLOT.early.mid=quantile(model.data$BA.m2ha.plot.live, 0.5)
+	BA.PLOT.late.mid=quantile(model.data$BA.m2ha.plot.live, 0.75)
+	BA.PLOT.late=max(model.data$BA.m2ha.plot.live)
+
+
+	temp.response.5 <- full.model.annual.bai(var=TEMP, s, SIZE.5cm, RS, BA.PLOT.early, TEMP, PRECIP, FLOW, temp.response.5, param.est, param.distrib, n=250)	
+
+	temp.response.10 <- full.model.annual.bai(var=TEMP, s, SIZE.10cm, RS, BA.PLOT.early.mid, TEMP, PRECIP, FLOW, temp.response.10, param.est, param.distrib, n=250)	
+
+	temp.response.25 <- full.model.annual.bai(var=TEMP, s, SIZE.25cm, RS, BA.PLOT.late.mid, TEMP, PRECIP, FLOW, temp.response.25, param.est, param.distrib, n=250)	
+
+	temp.response.50 <- full.model.annual.bai(var=TEMP, s, SIZE.50cm, RS, BA.PLOT.late, TEMP, PRECIP, FLOW, temp.response.50, param.est, param.distrib, n=250)	
+	}
+
+summary(temp.response.5)
+summary(temp.response.10)
+summary(temp.response.25)
+summary(temp.response.50)
+
+BA.PLOT.early=min(model.data$BA.m2ha.plot.live)
+BA.PLOT.early.mid=quantile(model.data$BA.m2ha.plot.live, 0.5)
+BA.PLOT.late.mid=quantile(model.data$BA.m2ha.plot.live, 0.75)
+BA.PLOT.late=max(model.data$BA.m2ha.plot.live)
+
+
+# -----------------------
+temp.5.stack <- stack(temp.response.5[,substr(names(temp.response.5),6,8)=="MLE"])
+names(temp.5.stack) <- c("MLE", "Species")
+temp.5.stack$Species <- as.factor(substr(temp.5.stack$Species, 1, 4))
+temp.5.stack$x.temp <- temp.response.5$x.temp
+summary(temp.5.stack)
+
+temp.5.stack2 <- stack(temp.response.5[,substr(names(temp.response.5),6,11)=="CI.low"])
+summary(temp.5.stack2)
+
+temp.5.stack3 <- stack(temp.response.5[,substr(names(temp.response.5),6,12)=="CI.high"])
+summary(temp.5.stack3)
+
+temp.5.stack4 <- stack(temp.response.5[,substr(names(temp.response.5),6,8)=="Min"])
+summary(temp.5.stack4)
+
+temp.5.stack5 <- stack(temp.response.5[,substr(names(temp.response.5),6,8)=="Max"])
+summary(temp.5.stack5)
+
+temp.5.stack$CI.low <- temp.5.stack2[,1]
+temp.5.stack$CI.hi <- temp.5.stack3[,1]
+temp.5.stack$Min <- temp.5.stack4[,1]
+temp.5.stack$Max <- temp.5.stack5[,1]
+temp.5.stack$Succ <- as.factor(paste0("DBH=5 cm, PlotBA=", round(BA.PLOT.early,1), " m2/ha"))
+
+summary(temp.5.stack)
+# -----------------------
+temp.10.stack <- stack(temp.response.10[,substr(names(temp.response.10),6,8)=="MLE"])
+names(temp.10.stack) <- c("MLE", "Species")
+temp.10.stack$Species <- as.factor(substr(temp.10.stack$Species, 1, 4))
+temp.10.stack$x.temp <- temp.response.10$x.temp
+summary(temp.10.stack)
+
+temp.10.stack2 <- stack(temp.response.10[,substr(names(temp.response.10),6,11)=="CI.low"])
+summary(temp.10.stack2)
+
+temp.10.stack3 <- stack(temp.response.10[,substr(names(temp.response.10),6,12)=="CI.high"])
+summary(temp.10.stack3)
+
+temp.10.stack4 <- stack(temp.response.10[,substr(names(temp.response.10),6,8)=="Min"])
+summary(temp.10.stack4)
+
+temp.10.stack5 <- stack(temp.response.10[,substr(names(temp.response.10),6,8)=="Max"])
+summary(temp.10.stack5)
+
+temp.10.stack$CI.low <- temp.10.stack2[,1]
+temp.10.stack$CI.hi <- temp.10.stack3[,1]
+temp.10.stack$Min <- temp.10.stack4[,1]
+temp.10.stack$Max <- temp.10.stack5[,1]
+temp.10.stack$Succ <- as.factor(paste0("DBH=10 cm, PlotBA=", round(BA.PLOT.early.mid,1), " m2/ha"))
+
+summary(temp.10.stack)
+# -----------------------
+temp.25.stack <- stack(temp.response.25[,substr(names(temp.response.25),6,8)=="MLE"])
+names(temp.25.stack) <- c("MLE", "Species")
+temp.25.stack$Species <- as.factor(substr(temp.25.stack$Species, 1, 4))
+temp.25.stack$x.temp <- temp.response.25$x.temp
+summary(temp.25.stack)
+
+temp.25.stack2 <- stack(temp.response.25[,substr(names(temp.response.25),6,11)=="CI.low"])
+summary(temp.25.stack2)
+
+temp.25.stack3 <- stack(temp.response.25[,substr(names(temp.response.25),6,12)=="CI.high"])
+summary(temp.25.stack3)
+
+temp.25.stack4 <- stack(temp.response.25[,substr(names(temp.response.25),6,8)=="Min"])
+summary(temp.25.stack4)
+
+temp.25.stack5 <- stack(temp.response.25[,substr(names(temp.response.25),6,8)=="Max"])
+summary(temp.25.stack5)
+
+temp.25.stack$CI.low <- temp.25.stack2[,1]
+temp.25.stack$CI.hi <- temp.25.stack3[,1]
+temp.25.stack$Min <- temp.25.stack4[,1]
+temp.25.stack$Max <- temp.25.stack5[,1]
+temp.25.stack$Succ <- as.factor(paste0("DBH=25 cm, PlotBA=", round(BA.PLOT.late.mid,1), " m2/ha"))
+# -----------------------
+temp.50.stack <- stack(temp.response.50[,substr(names(temp.response.50),6,8)=="MLE"])
+names(temp.50.stack) <- c("MLE", "Species")
+temp.50.stack$Species <- as.factor(substr(temp.50.stack$Species, 1, 4))
+temp.50.stack$x.temp <- temp.response.50$x.temp
+summary(temp.50.stack)
+
+temp.50.stack2 <- stack(temp.response.50[,substr(names(temp.response.50),6,11)=="CI.low"])
+summary(temp.50.stack2)
+
+temp.50.stack3 <- stack(temp.response.50[,substr(names(temp.response.50),6,12)=="CI.high"])
+summary(temp.50.stack3)
+
+temp.50.stack4 <- stack(temp.response.50[,substr(names(temp.response.50),6,8)=="Min"])
+summary(temp.50.stack4)
+
+temp.50.stack5 <- stack(temp.response.50[,substr(names(temp.response.50),6,8)=="Max"])
+summary(temp.50.stack5)
+
+temp.50.stack$CI.low <- temp.50.stack2[,1]
+temp.50.stack$CI.hi <- temp.50.stack3[,1]
+temp.50.stack$Min <- temp.50.stack4[,1]
+temp.50.stack$Max <- temp.50.stack5[,1]
+temp.50.stack$Succ <- as.factor(paste0("DBH=50 cm, PlotBA=", round(BA.PLOT.late.mid,1), " m2/ha"))
+# -----------------------
+summary(temp.5.stack)
+summary(temp.10.stack)
+summary(temp.25.stack)
+summary(temp.50.stack)
+# -----------------------
+
+temp.stack <- rbind(temp.5.stack, temp.10.stack, temp.25.stack, temp.50.stack)
+summary(temp.stack)
+
+# ---------------
+# QUPR contrasts
+# ---------------
+t.test(temp.stack[temp.stack$Species=="QUPR" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"],temp.stack[temp.stack$Species=="QUPR" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"], paired=T)
+
+summary(temp.stack[temp.stack$Species=="QUPR" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"])
+summary(temp.stack[temp.stack$Species=="QUPR" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"])
+
+qupr.diff <- temp.stack[temp.stack$Species=="QUPR" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"] - temp.stack[temp.stack$Species=="QUPR" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"]
+summary(qupr.diff/temp.stack[temp.stack$Species=="QUPR" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"])
+mean(qupr.diff)
+sd(qupr.diff)
+# ---------------
+
+
+
+# ---------------
+# NYSY contrasts
+# ---------------
+t.test(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"],temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"], paired=T)
+
+summary(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha",])
+summary(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha",])
+temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha" & temp.stack$MLE == max(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"]),]
+
+nysy.diff <- temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"] - temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"]
+nysy.diff <- cbind(nysy.diff, temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","x.temp"])
+colnames(nysy.diff)[2] <- "x.temp"
+summary(nysy.diff)
+nysy.diff[nysy.diff$x.temp=283.8244,]
+
+summary(nysy.diff/temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"])
+mean(nysy.diff[,1])
+sd(nysy.diff[,1])
+# ---------------
+
+
+species.colors <- c("purple", "blue", "green3", "orange", "red")
+
+pdf("Figures/Annual Temperature Response vs Succession.pdf", width=11, height=8.5)
+ggplot(data=temp.stack) + large.axes + facet_wrap(~ Succ, nrow=1) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Species), alpha=0.2) +
+	geom_line(aes(x=x.temp-273.15, y=MLE, color=Species, linetype=Species), size=1) +
+	scale_color_manual(values=species.colors) + 
+	scale_fill_manual(values= species.colors) +
+	# scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
+	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
+	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
+	theme(legend.position=c(0.15,0.85), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species", color="Species", linetype="Species")
 dev.off()

@@ -87,19 +87,39 @@ min(model.data[ ,precip.col.ind]); max(model.data[ ,precip.col.ind])
 
 
 
-# ####################################################################
-# # Making a csv with parameter estimates
-# ####################################################################
-# load("../Seasonal/Outputs/ACRU_Full_Season_Results.Rdata")
-# acru.results <- results
-# load("../Seasonal/Outputs/BELE_Full_Season_Results.Rdata")
-# bele.results <- results
-# load("../Seasonal/Outputs/NYSY_Full_Season_Results.Rdata")
-# nysy.results <- results
-# load("../Seasonal/Outputs/QUPR_Full_Season_Results.Rdata")
-# qupr.results <- results
-# load("../Seasonal/Outputs/QURU_Full_Season_Results.Rdata")
-# quru.results <- results
+####################################################################
+# Making a csv with parameter estimates
+####################################################################
+load("../Seasonal/Outputs/ACRU_Full_Season_Results.Rdata")
+acru.results <- results
+load("../Seasonal/Outputs/BELE_Full_Season_Results.Rdata")
+bele.results <- results
+load("../Seasonal/Outputs/NYSY_Full_Season_Results.Rdata")
+nysy.results <- results
+load("../Seasonal/Outputs/QUPR_Full_Season_Results.Rdata")
+qupr.results <- results
+load("../Seasonal/Outputs/QURU_Full_Season_Results.Rdata")
+quru.results <- results
+
+# #-----------------------------------
+# # Looking at autocorrelation quickly
+# #-----------------------------------
+# # Calculating residuals
+# acru.results$source_data$resid <- acru.results$source_data$BAI - acru.results$source_data$predicted
+# bele.results$source_data$resid <- bele.results$source_data$BAI - bele.results$source_data$predicted
+# nysy.results$source_data$resid <- nysy.results$source_data$BAI - nysy.results$source_data$predicted
+# qupr.results$source_data$resid <- qupr.results$source_data$BAI - qupr.results$source_data$predicted
+# quru.results$source_data$resid <- quru.results$source_data$BAI - quru.results$source_data$predicted
+
+# # Graphing the Autocorrelation
+# acf(acru.results$source_data$resid, lag.max=20)
+# acf(bele.results$source_data$resid, lag.max=20)
+# acf(nysy.results$source_data$resid, lag.max=20)
+# acf(qupr.results$source_data$resid, lag.max=20)
+# acf(quru.results$source_data$resid, lag.max=20)
+# #-----------------------------------
+
+
 
 # acru.pars <- data.frame(Species="ACRU", Parameter=names(unlist(acru.results$best_pars)), MLE=unlist(acru.results$best_pars), Lower.Lim=unlist(acru.results$lower_limits), Upper.Lim=unlist(acru.results$upper_limits), Lower.Bound=unlist(acru.results$par_lo), Upper.Bound=unlist(acru.results$par_hi))
 
@@ -127,14 +147,14 @@ summary(param.est)
 ####################################################################
 # param.est[param.est$Species=="QURU",]
 
-param.distrib <- data.frame(array(dim=c(nrow(param.est),202))) # ncol= num runs + parameter + species
-names(param.distrib) <- c("Species", "Parameter", paste("X", 1:200, sep=""))
+# n = number of draws to do
+n <- 500
+
+param.distrib <- data.frame(array(dim=c(nrow(param.est),n+2))) # ncol= num runs + parameter + species
+names(param.distrib) <- c("Species", "Parameter", paste("X", 1:n, sep=""))
 names(param.distrib)
 param.distrib[,c("Species", "Parameter")] <- param.est[,c("Species", "Parameter")]
 param.distrib[1:30,1:4]
-
-# n = number of draws to do
-n <- 200
 
 for(s in unique(param.distrib$Species)){
 	for(j in unique(param.distrib$Parameter)){
@@ -157,7 +177,8 @@ param.means <- rowMeans(param.distrib[,3:202])
 ##################################################################################
 # Autogenic: Size = Basal Area of tree (cm2); BootStrapped
 ##################################################################################
-x.auto <- seq(0, max(model.data$BA.tree.cm2, na.rm=T), length=250)
+n=250
+x.auto <- seq(0, max(model.data$BA.tree.cm2, na.rm=T), length=n)
 summary(x.auto)
 
 ##########################
@@ -174,7 +195,7 @@ names(aut.response) <- "x.auto"
 
 
 for(s in unique(param.distrib$Species)){
-	aut.response <- aut.predict(s, x.auto, aut.response, param.est, param.distrib)
+	aut.response <- aut.predict(s, x.auto, aut.response, param.est, param.distrib, n=n)
 	}
 
 summary(aut.response)
@@ -212,17 +233,18 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Figures/Species Comparisons Full Model Seasonal - Autogenic.pdf")
 ggplot(data=aut.stack) + large.axes +
 	geom_ribbon(aes(x=x.auto, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.auto, y=MLE, color=Species), size=1) +
+	geom_line(aes(x=x.auto, y=MLE, color=Species, linetype=Species), size=1) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1), breaks=seq(0, 1, 0.25)) +
-	theme(legend.position=c(0.85,0.75), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
+	theme(legend.position=c(0.85,0.80), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 dev.off()
 
 ##################################################################################
 # Competition; BootStrapped
 ##################################################################################
-x.relba <- seq(0, 1, length=250)
+n=250
+x.relba <- seq(0, 1, length=n)
 summary(x.relba)
 plot.BA <- mean(model.data$BA.m2ha.plot.live)
 
@@ -239,9 +261,9 @@ names(comp.response) <- "x.relba"
 comp.response[,1] <- x.relba
 
 for(s in unique(param.distrib$Species)){
-	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"]), max(model.data[model.data$Spp==s, "RelBA"]), length=250)
+	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"]), max(model.data[model.data$Spp==s, "RelBA"]), length=n)
 	plot.ba <- mean(model.data$BA.m2ha)
-	comp.response <- comp.predict(s, x.relba, plot.ba, comp.response, param.est, param.distrib)
+	comp.response <- comp.predict(s, x.relba, plot.ba, comp.response, param.est, param.distrib, n=n)
 	}
 summary(comp.response)
 
@@ -278,7 +300,7 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Figures/Species Comparisons Full Model Seasonal - Competition.pdf")
 ggplot(data=comp.stack) + large.axes +
 	geom_ribbon(aes(x=x.relba, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.relba, y=MLE, color=Species), size=1.5) +
+	geom_line(aes(x=x.relba, y=MLE, color=Species, linetype=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Relative Basal Area") + 
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0, 1.0)) +
@@ -290,10 +312,20 @@ dev.off()
 ##################################################################################
 # Temperature; BootStrapped
 ##################################################################################
+n=250
 seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
 seasons
 
-x.temp <- seq(260, 310, length=250)
+# x.temp <- seq(260, 305, length=n)
+# summary(model.data)
+
+x.temp <- data.frame(array(dim=c(n,length(seasons))))
+names(x.temp) <- seasons
+for(i in seasons){
+	x.temp[,i] <- seq(min(model.data[,paste("Tavg", i, sep=".")])-5, max(model.data[,paste("Tavg", i, sep=".")])+5, length=n)
+}
+#x.temp2 <- x.temp2[,3:length(x.temp2)]
+summary(x.temp)
 
 summary(param.est)
 unique(param.est$Parameter)
@@ -309,7 +341,7 @@ for(i in 1:length(seasons)){
 
 # Data frame where each run will be placed
 temp.temp <- data.frame(array(dim=c(length(x.temp),1)))
-row.names(temp.temp) <- x.names
+row.names(temp.temp) <- x.temp
 
 # Data frame where the summary (mean & SD) of the runs will be placed
 # temp.response <- data.frame(array(dim=c(length(x.temp),1)))
@@ -324,7 +356,7 @@ summary(temp.response)
 
 
 for(s in unique(param.distrib$Species)){
-	temp.response <- temp.seasonal(s, x.temp, temp.response, param.est, param.distrib)
+	temp.response <- temp.seasonal(s, x.temp, temp.response, param.est, param.distrib, n)
 		}
 
 summary(temp.response)
@@ -364,6 +396,7 @@ temp.stack$Max <- temp.stack5[,1]
 summary(temp.stack)
 
 
+
 # adding seasonal max/min to the data set (to do vertical lines for what's observed)
 for(i in 1:length(seasons)){
 	temp.stack[temp.stack$season.code==i,"temp.min"] <- min(model.data[,temp.col.ind[i]])
@@ -373,23 +406,23 @@ summary(temp.stack)
 temp.stack$Ribbon.min <- ifelse(temp.stack$x.temp < temp.stack$temp.min, temp.stack$x.temp, temp.stack$temp.min)
 temp.stack$Ribbon.max <- ifelse(temp.stack$x.temp > temp.stack$temp.max, temp.stack$x.temp, temp.stack$temp.max)
 
-# Some summary stats
-1-min(temp.stack[temp.stack$Species=="BELE" & temp.stack$Season=="Summer" & temp.stack$Year=="Prior" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/max(temp.stack[temp.stack$Species=="BELE" & temp.stack$Season=="Summer" & temp.stack$Year=="Prior" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
+# # Some summary stats
+# 1-min(temp.stack[temp.stack$Species=="BELE" & temp.stack$Season=="Summer" & temp.stack$Year=="Prior" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/max(temp.stack[temp.stack$Species=="BELE" & temp.stack$Season=="Summer" & temp.stack$Year=="Prior" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
 
-max(temp.stack[temp.stack$Species=="QURU" & temp.stack$Season=="Summer" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/min(temp.stack[temp.stack$Species=="QURU" & temp.stack$Season=="Summer" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
+# max(temp.stack[temp.stack$Species=="QURU" & temp.stack$Season=="Summer" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/min(temp.stack[temp.stack$Species=="QURU" & temp.stack$Season=="Summer" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
 
-max(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Season=="Spring" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/min(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Season=="Spring" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
+# max(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Season=="Spring" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/min(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Season=="Spring" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
 
-1-min(temp.stack[temp.stack$Species=="ACRU" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/max(temp.stack[temp.stack$Species=="ACRU" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
+# 1-min(temp.stack[temp.stack$Species=="ACRU" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/max(temp.stack[temp.stack$Species=="ACRU" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
 
-max(temp.stack[temp.stack$Species=="QUPR" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/min(temp.stack[temp.stack$Species=="QUPR" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
+# max(temp.stack[temp.stack$Species=="QUPR" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])/min(temp.stack[temp.stack$Species=="QUPR" & temp.stack$Season=="Winter" & temp.stack$Year=="Current" & temp.stack$x.temp>=temp.stack$temp.min & temp.stack$x.temp<=temp.stack$temp.max, "MLE"])
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Species Comparisons Full Model Seasonal - Temperature.pdf", width=10, height=7.5)
 ggplot(data=temp.stack) + large.axes + facet_grid(Year~Season, scale="free") +
 	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.temp-273.15, y=MLE, color=Species), size=1.25) +
+	geom_line(aes(x=x.temp-273.15, y=MLE, color=Species, linetype=Species), size=1.25) +
 	geom_vline(aes(xintercept=temp.min-273.15), linetype="dashed", color="black") + 
 	geom_vline(aes(xintercept=temp.max-273.15), linetype="dashed", color="black") + 
 	geom_ribbon(aes(x=Ribbon.min-273.15, ymin=0, ymax=1),fill="gray50", alpha=0.5) +
@@ -407,10 +440,11 @@ dev.off()
 ##################################################################################
 # Precipitation; BootStrapped
 ##################################################################################
+n=250
 seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
 seasons
 
-x.precip <- seq(min(model.data[,precip.col.ind]), max(model.data[,precip.col.ind]), length=250)
+x.precip <- seq(10, max(model.data[,precip.col.ind]), length=n)
 x.flow <- mean(model.data$flow)
 
 summary(param.est)
@@ -443,7 +477,7 @@ summary(precip.response)
 
 
 for(s in unique(param.distrib$Species)){
-	precip.response <- precip.seasonal(s, x.precip, FLOW, precip.response, param.est, param.distrib)
+	precip.response <- precip.seasonal(s, x.precip, FLOW, precip.response, param.est, param.distrib, n)
 	}
 
 
@@ -493,20 +527,20 @@ precip.stack$Ribbon.min <- ifelse(precip.stack$x.precip < precip.stack$precip.mi
 precip.stack$Ribbon.max <- ifelse(precip.stack$x.precip > precip.stack$precip.max, precip.stack$x.precip, precip.stack$precip.max)
 summary(precip.stack)
 
-# Quantifying changes in growth
-1-min(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
+# # # Quantifying changes in growth
+# 1-min(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
 
-1-min(precip.stack[precip.stack$Species=="BELE" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="BELE" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
+# 1-min(precip.stack[precip.stack$Species=="BELE" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="BELE" & precip.stack$Season=="Summer" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
 
-max(precip.stack[precip.stack$Species=="QURU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/min(precip.stack[precip.stack$Species=="QURU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
+# max(precip.stack[precip.stack$Species=="QURU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/min(precip.stack[precip.stack$Species=="QURU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
 
-1-min(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
+# 1-min(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="NYSY" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
 
-1-min(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
+# 1-min(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Summer" & precip.stack$Year=="Prior" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
 
-1-min(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
+# 1-min(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="ACRU" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
 
-1-min(precip.stack[precip.stack$Species=="QUPR" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="QUPR" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
+# 1-min(precip.stack[precip.stack$Species=="QUPR" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])/max(precip.stack[precip.stack$Species=="QUPR" & precip.stack$Season=="Winter" & precip.stack$Year=="Current" & precip.stack$x.precip>=precip.stack$precip.min & precip.stack$x.precip<=precip.stack$precip.max, "MLE"])
 
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
@@ -514,13 +548,13 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Figures/Species Comparisons Full Model Seasonal - Precipitation.pdf", width=10, height=7.5)
 ggplot(data=precip.stack) + large.axes + facet_grid(Year~Season) +
 	geom_ribbon(aes(x=x.precip, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.precip, y=MLE, color=Species), size=1.) +
+	geom_line(aes(x=x.precip, y=MLE, color=Species, linetype=Species), size=1.) +
 	geom_vline(aes(xintercept=precip.min), linetype="dashed", color="black") + 
 	geom_vline(aes(xintercept=precip.max), linetype="dashed", color="black") + 
 	geom_ribbon(aes(x=Ribbon.min, ymin=0, ymax=1),fill="gray50", alpha=0.5) +
 	geom_ribbon(aes(x=Ribbon.max, ymin=0, ymax=1),fill="gray50", alpha=0.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	scale_x_continuous(name="Total Season Precip (mm)") + 
+	scale_x_continuous(name="Total Season Precip (mm)", breaks=c(50, 100, 150, 200)) + 
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1), breaks=seq(0, 1, 0.25)) +
 	theme(legend.position=c(0.12,0.8), legend.text=element_text(size=14), legend.title=element_text(size=rel(1.5))) + labs(fill="Species") + theme(strip.text=element_text(size=rel(1.5), face="bold"))
 dev.off()

@@ -1,7 +1,7 @@
 # ----------------------------------------------------
 # Autogenic (Size) Predict
 # ----------------------------------------------------
-aut.predict <- function(species, SIZE, out, param.est, param.distrib){
+aut.predict <- function(species, SIZE, out, param.est, param.distrib, n){
 	aut.temp <- data.frame(array(dim=c(length(SIZE),1)))
 	row.names(aut.temp) <- SIZE
 
@@ -11,11 +11,11 @@ aut.predict <- function(species, SIZE, out, param.est, param.distrib){
 	out[,paste(species, "x.auto", sep=".")] <- SIZE	#---------------------------------------------
 	# Varying the parameters independently because doing it at the same time causes impossible values
 	#---------------------------------------------
-	for(i in 1:100){
+	for(i in 1:n){
 		aa.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="aa", 3:ncol(param.distrib)], size=1, replace=T))
 		aut.temp[,i] <- autogenic.effect(SIZE, aa=aa.samp, ab=ab.mle)
 		}
-	for(i in 101:200){
+	for(i in (1*n+1):(2*n)){
 		ab.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="ab", 3:ncol(param.distrib)], size=1, replace=T))
 		aut.temp[,i] <- autogenic.effect(SIZE, aa=aa.mle, ab=ab.samp)
 		}
@@ -41,7 +41,7 @@ aut.predict <- function(species, SIZE, out, param.est, param.distrib){
 # ----------------------------------------------------
 # Competition Predict
 # ----------------------------------------------------
-comp.predict <- function(species, RS, BA.PLOT, out, param.est, param.distrib){
+comp.predict <- function(species, RS, BA.PLOT, out, param.est, param.distrib,n){
 	comp.temp <- data.frame(array(dim=c(length(x.relba),1)))
 	row.names(comp.temp) <- x.relba
 
@@ -51,48 +51,46 @@ comp.predict <- function(species, RS, BA.PLOT, out, param.est, param.distrib){
 		assign(paste(p, "MLE", sep="."), param.est[param.est$Species==s & param.est$Parameter==p, "MLE"])
 		}
 
-	gmax.MLE <- param.est[param.est$Species==s & param.est$Parameter=="gmax", "MLE"]
-
 	#---------------------------------------------
 	# Varying the parameters independently because doing it at the same time causes impossible values
 	#---------------------------------------------
-	for(i in 1:100){ #ca
+	for(i in 1:n){ #ca
 		ca.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="ca", 3:ncol(param.distrib)], size=1, replace=T))
 		comp.temp[,i] <- comp.effect(RS=RS, 
 										BA.PLOT=BA.PLOT, ca=ca.samp, cb=cb.MLE, cc=cc.MLE,
 										cd=cd.MLE, ce=ce.MLE, cf=cf.MLE, cg=cg.MLE)
 		}
-	for(i in 101:200){ #cb
+	for(i in (1*n+1):(2*n)){ #cb
 		cb.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="cb", 3:ncol(param.distrib)], size=1, replace=T))
 		comp.temp[,i] <- comp.effect(RS=RS, 
 										BA.PLOT=BA.PLOT, ca=ca.MLE, cb=cb.samp, cc=cc.MLE,
 										cd=cd.MLE, ce=ce.MLE, cf=cf.MLE, cg=cg.MLE)
 		}
-	for(i in 201:300){ #cc
+	for(i in (2*n+1):(3*n)){ #cc
 		cc.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="cc", 3:ncol(param.distrib)], size=1, replace=T))
 		comp.temp[,i] <- comp.effect(RS=RS, 
 										BA.PLOT=BA.PLOT, ca=ca.MLE, cb=cb.MLE, cc=cc.samp,
 										cd=cd.MLE, ce=ce.MLE, cf=cf.MLE, cg=cg.MLE)
 		}
-	for(i in 301:400){ #cd
+	for(i in (3*n+1):(4*n)){ #cd
 		cd.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="cd", 3:ncol(param.distrib)], size=1, replace=T))
 		comp.temp[,i] <- comp.effect(RS=RS, 
 										BA.PLOT=BA.PLOT, ca=ca.MLE, cb=cb.MLE, cc=cc.MLE,
 										cd=cd.samp, ce=ce.MLE, cf=cf.MLE, cg=cg.MLE)
 		}
-	for(i in 401:500){ #ce
+	for(i in (4*n+1):(5*n)){ #ce
 		ce.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="ce", 3:ncol(param.distrib)], size=1, replace=T))
 		comp.temp[,i] <- comp.effect(RS=RS, 
 										BA.PLOT=BA.PLOT, ca=ca.MLE, cb=cb.MLE, cc=cc.MLE,
 										cd=cd.MLE, ce=ce.samp, cf=cf.MLE, cg=cg.MLE)
 		}
-	for(i in 501:600){ #cf
+	for(i in (5*n+1):(6*n)){ #cf
 		cf.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="cf", 3:ncol(param.distrib)], size=1, replace=T))
 		comp.temp[,i] <- comp.effect(RS=RS, 
 										BA.PLOT=BA.PLOT, ca=ca.MLE, cb=cb.MLE, cc=cc.MLE,
 										cd=cd.MLE, ce=ce.MLE, cf=cf.samp, cg=cg.MLE)
 		}
-	for(i in 601:700){ #cg
+	for(i in (6*n+1):(7*n)){ #cg
 		cg.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="cg", 3:ncol(param.distrib)], size=1, replace=T))
 		comp.temp[,i] <- comp.effect(RS=RS, 
 										BA.PLOT=BA.PLOT, ca=ca.MLE, cb=cb.MLE, cc=cc.MLE,
@@ -123,7 +121,7 @@ comp.predict <- function(species, RS, BA.PLOT, out, param.est, param.distrib){
 # ----------------------------------------------------
 # Temperature Predict -- Annual
 # ----------------------------------------------------
-temp.ann <- function(species, TEMP, out, param.est, param.distrib){
+temp.ann <- function(species, TEMP, out, param.est, param.distrib, n){
 	temp.temp <- data.frame(array(dim=c(length(TEMP),1)))
 	row.names(temp.temp) <- TEMP
 
@@ -132,11 +130,11 @@ temp.ann <- function(species, TEMP, out, param.est, param.distrib){
 
 	out[,paste(s, "x.temp", sep=".")] <- TEMP
 
-	for(i in 1:100){
+	for(i in 1:n){
 		ta1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="ta1", 3:202], size=1, replace=T))
 		temp.temp[,i] <- temp.effect(TEMP=TEMP, ta1=ta1.samp, tb1=tb1.MLE)
 		}
-	for(i in 101:200){
+	for(i in (1*n+1):(2*n)){
 		tb1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="tb1", 3:202], size=1, replace=T))
 		temp.temp[,i] <- temp.effect(TEMP=TEMP, ta1=ta1.MLE, tb1=tb1.samp)
 		}
@@ -157,8 +155,16 @@ temp.ann <- function(species, TEMP, out, param.est, param.distrib){
 # ----------------------------------------------------
 # Temperature Predict -- Seasonal
 # ----------------------------------------------------
-temp.seasonal <- function(species, TEMP, out, param.est, param.distrib){
+temp.seasonal <- function(species, TEMP, out, param.est, param.distrib, n){
+	# Note, TEMP is now a data frame where columns = seasonal temperature: prev summer - current fall
+
 	for(j in 1:length(seasons)){
+		x.temp <- TEMP[,j]
+
+		temp.temp <- data.frame(array(dim=c(length(x.temp),1)))
+		row.names(temp.temp) <- x.temp	
+
+
 		start <- j*length(x.temp)-length(x.temp)+1
 
 		p.list1 <- c(paste("ta1", j, sep=""), paste("tb1", j, sep=""))
@@ -172,11 +178,11 @@ temp.seasonal <- function(species, TEMP, out, param.est, param.distrib){
 	#---------------------------------------------
 	# Varying the parameters independently because doing it at the same time causes impossible values
 	#---------------------------------------------
-		for(i in 1:100){
+		for(i in 1:n){
 			ta1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[1], 3:202], size=1, replace=T))
 			temp.temp[,i] <- temp.effect(x.temp, ta1=ta1.samp, tb1=tb1.MLE)
 			}
-		for(i in 101:200){
+		for(i in (1*n+1):(2*n)){
 			tb1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[2], 3:202], size=1, replace=T))
 			temp.temp[,i] <- temp.effect(x.temp, ta1=ta1.MLE, tb1=tb1.samp)
 			}
@@ -206,7 +212,7 @@ temp.seasonal <- function(species, TEMP, out, param.est, param.distrib){
 # ----------------------------------------------------
 # Precipitation Predict -- Annual
 # ----------------------------------------------------
-precip.ann <- function(species, PRECIP, FLOW, out, param.est, param.distrib){
+precip.ann <- function(species, PRECIP, FLOW, out, param.est, param.distrib, n){
 	precip.temp <- data.frame(array(dim=c(length(x.auto),1)))
 	row.names(precip.temp) <- PRECIP	
 
@@ -217,15 +223,15 @@ precip.ann <- function(species, PRECIP, FLOW, out, param.est, param.distrib){
 	out[,paste(s, "x.auto", sep=".")] <- PRECIP
 
 
-	for(i in 1:100){
+	for(i in 1:n){
 		pa1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="pa1", 3:202], size=1, replace=T))
 		precip.temp[,i] <- precip.effect(PRECIP, FLOW, pa1=pa1.samp, pb1=pb1.MLE, pc1.MLE)
 		}
-	for(i in 101:200){
+	for(i in (1*n+1):(2*n)){
 		pb1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="pb1", 3:202], size=1, replace=T))
 		precip.temp[,i] <- precip.effect(PRECIP, FLOW, pa1=pa1.MLE, pb1=pb1.samp, pc1.MLE)
 		}
-	for(i in 201:300){
+	for(i in (2*n+1):(3*n)){
 		pc1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter=="pc1", 3:202], size=1, replace=T))
 		precip.temp[,i] <- precip.effect(PRECIP, FLOW, pa1=pa1.MLE, pb1=pb1.MLE, pc1.samp)
 		}
@@ -247,11 +253,14 @@ precip.ann <- function(species, PRECIP, FLOW, out, param.est, param.distrib){
 # ----------------------------------------------------
 # Precipitation Predict -- Seasonal
 # ----------------------------------------------------
-precip.seasonal <- function(species, PRECIP, FLOW, out, param.est, param.distrib){
-	precip.temp <- data.frame(array(dim=c(length(x.auto),1)))
-	row.names(precip.temp) <- PRECIP	
-
+precip.seasonal <- function(species, PRECIP, FLOW, out, param.est, param.distrib, n){
+	# Note, PRECIP is now a data frame with seasons in columns
 	for(j in 1:length(seasons)){
+		x.precip <- PRECIP[,j]
+		
+		precip.temp <- data.frame(array(dim=c(length(x.precip),1)))
+		row.names(precip.temp) <- x.precip	
+
 		start <- j*length(x.precip)-length(x.precip)+1
 
 		p.list1 <- c(paste("pa1", j, sep=""), paste("pb1", j, sep=""), paste("pc1", j, sep=""))
@@ -265,15 +274,15 @@ precip.seasonal <- function(species, PRECIP, FLOW, out, param.est, param.distrib
 	#---------------------------------------------
 	# Varying the parameters independently because doing it at the same time causes impossible values
 	#---------------------------------------------
-		for(i in 1:100){
+		for(i in 1:n){
 			pa1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[1], 3:202], size=1, replace=T))
 			precip.temp[,i] <- precip.effect(x.precip, x.flow, pa1=pa1.samp, pb1=pb1.MLE, pc1=pc1.MLE)
 			}
-		for(i in 101:200){
+		for(i in (1*n+1):(2*n)){
 			pb1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[2], 3:202], size=1, replace=T))
 			precip.temp[,i] <- precip.effect(x.precip, x.flow, pa1=pa1.MLE, pb1=pb1.samp, pc1=pc1.MLE)
 			}
-		for(i in 201:300){
+		for(i in (2*n+1):(3*n)){
 			pc1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[3], 3:202], size=1, replace=T))
 			precip.temp[,i] <- precip.effect(x.precip, x.flow, pa1=pa1.MLE, pb1=pb1.MLE, pc1=pc1.samp)
 			}
@@ -302,9 +311,9 @@ precip.seasonal <- function(species, PRECIP, FLOW, out, param.est, param.distrib
 
 
 # ----------------------------------------------------
-# Full Growth Model, BAI
+# Full Annual Growth Model, BAI
 # ----------------------------------------------------
-full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, out, param.est, param.distrib){
+full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP, FLOW, out, param.est, param.distrib, n){
 	full.temp <- data.frame(array(dim=c(length(var),1)))
 	row.names(full.temp) <- var
 
@@ -314,7 +323,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 	
 
 	# aa
-	for(i in 1:100){ #aa
+	for(i in 1:n){ #aa
 		aa.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="aa", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE=SIZE,
 									RS=RS, 
@@ -329,7 +338,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# ab
-	for(i in 101:200){ #ab
+	for(i in (1*n+1):(2*n)){ #ab
 		ab.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="ab", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -344,7 +353,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# ca
-	for(i in 201:300){ #ca
+	for(i in (2*n+1):(3*n)){ #ca
 		ca.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="ca", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -359,7 +368,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}		
 	# cb
-	for(i in 301:400){ #cb
+	for(i in (3*n+1):(4*n)){ #cb
 		cb.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="cb", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -374,7 +383,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# cc
-	for(i in 401:500){ #cc
+	for(i in (4*n+1):(5*n)){ #cc
 		cc.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="cc", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -389,7 +398,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# cd
-	for(i in 501:600){ #cd
+	for(i in (5*n+1):(6*n)){ #cd
 		cd.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="cd", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -404,7 +413,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# ce
-	for(i in 601:700){ #ce
+	for(i in (6*n+1):(7*n)){ #ce
 		ce.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="ce", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -419,7 +428,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# cf
-	for(i in 701:800){ #cf
+	for(i in (7*n+1):(8*n)){ #cf
 		cf.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="cd", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -434,7 +443,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# cg
-	for(i in 801:900){ #cg
+	for(i in (8*n+1):(9*n)){ #cg
 		cg.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="cg", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -449,7 +458,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# ta
-	for(i in 901:1000){ #ta
+	for(i in (9*n+1):(10*n)){ #ta
 		ta1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="ta1", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -464,7 +473,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# tb
-	for(i in 1001:1100){ #tb
+	for(i in (10*n+1):(11*n)){ #tb
 		tb1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="tb1", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -479,7 +488,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# pa
-	for(i in 1101:1200){ #pa
+	for(i in (11*n+1):(12*n)){ #pa
 		pa1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="pa1", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -494,7 +503,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# pb
-	for(i in 1201:1300){ #pb
+	for(i in (12*n+1):(13*n)){ #pb
 		pb1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="pb1", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -509,7 +518,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# pc
-	for(i in 1301:1400){ #pc
+	for(i in (13*n+1):(14*n)){ #pc
 		pc1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="pc1", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -524,7 +533,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 									gmax=gmax.mle)
 		}
 	# gmax
-	for(i in 1401:1500){ #gmax
+	for(i in (14*n+1):(15*n)){ #gmax
 		gmax.samp <- as.numeric(sample(param.distrib[param.distrib$Species==species & param.distrib$Parameter=="gmax", 3:ncol(param.distrib)], size=1, replace=T))
 		full.temp[,i] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
@@ -541,7 +550,7 @@ full.model.annual.bai <- function(species, var, SIZE, RS, BA.PLOT, TEMP, PRECIP,
 
 		#############
 
-
+	out[,paste(species, "VAR", sep=".")] <- var
 	out[,paste(species, "MLE", sep=".")] <- full.model.annual(SIZE= SIZE,
 									RS=RS, 
 									BA.PLOT=BA.PLOT,
