@@ -15,7 +15,7 @@ library(kobe)
 
 q.blank <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.major=element_blank(), panel.grid.minor= element_blank(), panel.border= element_blank(), panel.background= element_blank(), axis.text.x=element_text(angle=0, color="black", size=14, face="bold"), axis.text.y=element_text(color="black", size=12, face="bold"), axis.title.x=element_text(face="bold", size=14),  axis.title.y=element_text(face="bold", size=14))
 
-large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.major=element_blank(), panel.grid.minor= element_blank(), panel.border= element_blank(), panel.background= element_blank(), axis.text.x=element_text(angle=0, color="black", size=18), axis.text.y=element_text(color="black", size=18), axis.title.x=element_text(face="bold", size=20, vjust=-1),  axis.title.y=element_text(face="bold", size=20, vjust=0.5), plot.margin=unit(c(2,2,2,2), "lines"))
+large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.major=element_blank(), panel.grid.minor= element_blank(), panel.border= element_blank(), panel.background= element_blank(), axis.text.x=element_text(angle=0, color="black", size=18), axis.text.y=element_text(color="black", size=18), axis.title.x=element_text(face="bold", size=20, vjust=-0.5),  axis.title.y=element_text(face="bold", size=20, vjust=0.5), plot.margin=unit(c(0.1,0.5,0.5,0.1), "lines"))
 
 
 
@@ -543,10 +543,12 @@ sd(qupr.max.dif[,"MLE"])
 # ---------------------
 quru.max <- temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Maximum",c("MLE")]
 quru.min <-  temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Minimum",c("MLE")]
-summary(quru.min.dif[,1])
 # ---------------------
 quru.diff <- quru.max - quru.min
-summary(quru.diff)
+summary(quru.min.dif[,1])
+summary(quru.diff/temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Minimum",c("MLE")])
+
+summary(quru.min/quru.max)
 mean(quru.diff)
 sd(quru.diff)
 
@@ -554,14 +556,30 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Annual Precipitation and Temperature.pdf", width=11, height=8.5)
 ggplot(data=temp.stack) + large.axes + facet_wrap(~ Species) +
-	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Precip), alpha=0.2) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Precip), alpha=0.3) +
 	geom_line(aes(x=x.temp-273.15, y=MLE, color=Precip, linetype=Precip), size=1) +
 	scale_color_manual(values=c("black", "red", "blue")) + 
 	scale_fill_manual(values=c("black", "red", "blue")) +
 #	scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
 	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
 	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
-	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Precipitation", color="Precipitation", linetype="Precipitation")
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=rel(2)), legend.title=element_text(size=rel(2.25)), legend.key.height=unit(1.5, "line"), legend.key.width=unit(1.5, "line")) + 
+	labs(fill="Precipitation", color="Precipitation", linetype="Precipitation") +
+	theme(strip.text=element_text(size=rel(1.5), face="bold"))
+dev.off()
+
+pdf("Figures/Annual Precipitation and Temperature Grayscale.pdf", width=11, height=8.5)
+ggplot(data=temp.stack) + large.axes + facet_wrap(~ Species) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Precip), alpha=0.3) +
+	geom_line(aes(x=x.temp-273.15, y=MLE, color=Precip, linetype=Precip), size=1) +
+	scale_color_manual(values=c("black", "gray30", "gray60")) + 
+	scale_fill_manual(values=c("black", "gray30", "gray60")) +
+#	scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
+	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
+	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=rel(2)), legend.title=element_text(size=rel(2.25)), legend.key.height=unit(1.5, "line"), legend.key.width=unit(1.5, "line")) + 
+	labs(fill="Precipitation", color="Precipitation", linetype="Precipitation") +
+	theme(strip.text=element_text(size=rel(1.5), face="bold"))
 dev.off()
 
 
@@ -1245,7 +1263,7 @@ temp.5.stack$CI.low <- temp.5.stack2[,1]
 temp.5.stack$CI.hi <- temp.5.stack3[,1]
 temp.5.stack$Min <- temp.5.stack4[,1]
 temp.5.stack$Max <- temp.5.stack5[,1]
-temp.5.stack$Succ <- as.factor(paste0("DBH=5 cm, PlotBA=", round(BA.PLOT.early,1), " m2/ha"))
+temp.5.stack$Succ <- as.factor(paste0("DBH= 5 cm, PlotBA= ", round(BA.PLOT.early,1), " m2/ha"))
 
 summary(temp.5.stack)
 # -----------------------
@@ -1358,21 +1376,27 @@ summary(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, Plo
 temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha" & temp.stack$MLE == max(temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"]),]
 
 nysy.diff <- temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","MLE"] - temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"]
-nysy.diff <- cbind(nysy.diff, temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","x.temp"])
+nysy.diff <- data.frame(cbind(nysy.diff, temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=50 cm, PlotBA=26.8 m2/ha","x.temp"]))
 colnames(nysy.diff)[2] <- "x.temp"
 summary(nysy.diff)
-nysy.diff[nysy.diff$x.temp=283.8244,]
+
 
 summary(nysy.diff/temp.stack[temp.stack$Species=="NYSY" & temp.stack$Succ=="DBH=5 cm, PlotBA=4.8 m2/ha","MLE"])
 mean(nysy.diff[,1])
 sd(nysy.diff[,1])
 # ---------------
 
+summary(temp.stack)
+temp.stack$DBH <- as.factor(substr(temp.stack$Succ, 1, 9))
+temp.stack$PlotBA <- as.factor(substr(temp.stack$Succ, 12, 28))
+temp.stack$Scenario <- temp.stack$Succ
+levels(temp.stack$Scenario) <- c("Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4")
+summary(temp.stack)
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Annual Temperature Response vs Succession.pdf", width=11, height=8.5)
-ggplot(data=temp.stack) + large.axes + facet_wrap(~ Succ, nrow=1) +
+ggplot(data=temp.stack) + large.axes + facet_wrap(~ Scenario , nrow=1) +
 	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Species), alpha=0.2) +
 	geom_line(aes(x=x.temp-273.15, y=MLE, color=Species, linetype=Species), size=1) +
 	scale_color_manual(values=species.colors) + 
@@ -1380,5 +1404,7 @@ ggplot(data=temp.stack) + large.axes + facet_wrap(~ Succ, nrow=1) +
 	# scale_linetype_manual(values=c("solid", "dashed", "dotted")) +
 	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
 	ylab(expression(bold(paste(Basal~Area~Increment~~(mm^2~yr^-1))))) +
-	theme(legend.position=c(0.15,0.85), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species", color="Species", linetype="Species")
+	theme(legend.position=c(0.15,0.8), legend.text=element_text(size=rel(1.5)), legend.title=element_text(size=rel(1.75)), legend.key.height=unit(1.5, "line"), legend.key.width=unit(1.5, "line")) + 
+	labs(fill="Species", color="Species", linetype="Species") +
+	theme(strip.text=element_text(size=rel(1.5), face="bold"))
 dev.off()

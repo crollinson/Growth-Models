@@ -31,7 +31,7 @@ library(car)
 
 q.blank <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.major=element_blank(), panel.grid.minor= element_blank(), panel.border= element_blank(), panel.background= element_blank(), axis.text.x=element_text(angle=0, color="black", size=14, face="bold"), axis.text.y=element_text(color="black", size=12, face="bold"), axis.title.x=element_text(face="bold", size=14),  axis.title.y=element_text(face="bold", size=14))
 
-large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.major=element_blank(), panel.grid.minor= element_blank(), panel.border= element_blank(), panel.background= element_blank(), axis.text.x=element_text(angle=0, color="black", size=18), axis.text.y=element_text(color="black", size=18), axis.title.x=element_text(face="bold", size=20, vjust=-1),  axis.title.y=element_text(face="bold", size=20, vjust=0.5), plot.margin=unit(c(2,2,2,2), "lines"))
+large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.major=element_blank(), panel.grid.minor= element_blank(), panel.border= element_blank(), panel.background= element_blank(), axis.text.x=element_text(angle=0, color="black", size=18), axis.text.y=element_text(color="black", size=18), axis.title.x=element_text(face="bold", size=20, vjust=-0.5),  axis.title.y=element_text(face="bold", size=20, vjust=0.5), plot.margin=unit(c(0.1,0.1,0.5,0.1), "lines"))
 
 ####################################################################
 model.data <- read.csv("Inputs/TargetSpecies_AllSites_1990-2011.csv")
@@ -333,26 +333,26 @@ unique(param.est$Parameter)
 # Some Initial Data Frames
 ##########################
 # Vector needs to combine which season and x values
-x.names <- vector(length=length(seasons)*length(x.temp))
+x.names <- vector(length=length(seasons)*nrow(x.temp))
 for(i in 1:length(seasons)){
-	start <- i*length(x.temp)-length(x.temp)+1
-	x.names[start:(start+length(x.temp)-1)] <- paste(i, x.temp, sep=".")	
+	start <- i*length(x.temp[,i])-length(x.temp[,i])+1
+	x.names[start:(start+length(x.temp[,i])-1)] <- paste(i, x.temp[,i], sep=".")	
 }
 
 # Data frame where each run will be placed
-temp.temp <- data.frame(array(dim=c(length(x.temp),1)))
-row.names(temp.temp) <- x.temp
+temp.temp <- data.frame(array(dim=c(nrow(x.temp),1)))
+# row.names(temp.temp) <- x.temp
 
 # Data frame where the summary (mean & SD) of the runs will be placed
 # temp.response <- data.frame(array(dim=c(length(x.temp),1)))
 # names(temp.response) <- "x.temp"
 # temp.response[,1] <- x.temp
-temp.response <- data.frame(array(dim=c(length(x.names),1)))
-row.names(temp.response) <- x.names
-names(temp.response) <- "x.temp"
-temp.response[,1] <- x.temp
-temp.response$Season <- as.factor(substr(row.names(temp.response),1,1))
-summary(temp.response)
+# temp.response <- data.frame(array(dim=c(length(x.names),1)))
+# row.names(temp.response) <- x.names
+# names(temp.response) <- "x.temp"
+# temp.response[,1] <- x.temp
+# temp.response$Season <- as.factor(substr(row.names(temp.response),1,1))
+# summary(temp.response)
 
 
 for(s in unique(param.distrib$Species)){
@@ -421,16 +421,16 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Species Comparisons Full Model Seasonal - Temperature.pdf", width=10, height=7.5)
 ggplot(data=temp.stack) + large.axes + facet_grid(Year~Season, scale="free") +
-	geom_ribbon(aes(x=x.temp-273.15, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.temp-273.15, y=MLE, color=Species, linetype=Species), size=1.25) +
+	geom_ribbon(aes(x=x.temp-273.15, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.temp-273.15, y=MLE*100, color=Species, linetype=Species), size=1.25) +
 	geom_vline(aes(xintercept=temp.min-273.15), linetype="dashed", color="black") + 
 	geom_vline(aes(xintercept=temp.max-273.15), linetype="dashed", color="black") + 
-	geom_ribbon(aes(x=Ribbon.min-273.15, ymin=0, ymax=1),fill="gray50", alpha=0.5) +
-	geom_ribbon(aes(x=Ribbon.max-273.15, ymin=0, ymax=1),fill="gray50", alpha=0.5) +
+	geom_ribbon(aes(x=Ribbon.min-273.15, ymin=0, ymax=100),fill="gray50", alpha=0.5) +
+	geom_ribbon(aes(x=Ribbon.max-273.15, ymin=0, ymax=100),fill="gray50", alpha=0.5) +
 
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name=expression(bold(paste("Mean Season Temperature ("^"o","C)")))) + 
-	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.0), breaks=seq(0, 1, 0.25)) +
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
 	theme(legend.position=c(0.12,0.8), legend.text=element_text(size=14), legend.title=element_text(size=rel(1.5))) + labs(fill="Species") + theme(strip.text=element_text(size=rel(1.5), face="bold"))
 dev.off()
 
@@ -444,8 +444,16 @@ n=250
 seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
 seasons
 
-x.precip <- seq(10, max(model.data[,precip.col.ind]), length=n)
-x.flow <- mean(model.data$flow)
+# x.precip <- seq(260, 305, length=n)
+# summary(model.data)
+
+x.precip <- data.frame(array(dim=c(n,length(seasons))))
+names(x.precip) <- seasons
+for(i in seasons){
+	x.precip[,i] <- seq(min(model.data[,paste("Precip", i, sep=".")])-5, max(model.data[,paste("Precip", i, sep=".")])+5, length=n)
+}
+#x.precip2 <- x.precip2[,3:length(x.precip2)]
+summary(x.precip)
 
 summary(param.est)
 unique(param.est$Parameter)
@@ -453,28 +461,26 @@ unique(param.est$Parameter)
 # Some Initial Data Frames
 ##########################
 # Vector needs to combine which season and x values
-x.names <- vector(length=length(seasons)*length(x.precip))
+x.names <- vector(length=length(seasons)*nrow(x.precip))
 for(i in 1:length(seasons)){
-	start <- i*length(x.precip)-length(x.precip)+1
-	x.names[start:(start+length(x.precip)-1)] <- paste(i, x.precip, sep=".")	
+	start <- i*length(x.precip[,i])-length(x.precip[,i])+1
+	x.names[start:(start+length(x.precip[,i])-1)] <- paste(i, x.precip[,i], sep=".")	
 }
 
 # Data frame where each run will be placed
-precip.temp <- data.frame(array(dim=c(length(x.precip),1)))
-row.names(precip.temp) <- x.precip
+precip.temp <- data.frame(array(dim=c(nrow(x.precip),1)))
+# row.names(precip.precip) <- x.precip
 
 # Data frame where the summary (mean & SD) of the runs will be placed
 # precip.response <- data.frame(array(dim=c(length(x.precip),1)))
 # names(precip.response) <- "x.precip"
 # precip.response[,1] <- x.precip
-precip.response <- data.frame(array(dim=c(length(x.names),1)))
-row.names(precip.response) <- x.names
-names(precip.response) <- "x.precip"
-precip.response[,1] <- x.precip
-precip.response$Season <- as.factor(substr(row.names(precip.response),1,1))
-summary(precip.response)
-
-
+# precip.response <- data.frame(array(dim=c(length(x.names),1)))
+# row.names(precip.response) <- x.names
+# names(precip.response) <- "x.precip"
+# precip.response[,1] <- x.precip
+# precip.response$Season <- as.factor(substr(row.names(precip.response),1,1))
+# summary(precip.response)
 
 for(s in unique(param.distrib$Species)){
 	precip.response <- precip.seasonal(s, x.precip, FLOW, precip.response, param.est, param.distrib, n)
@@ -546,15 +552,15 @@ summary(precip.stack)
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Species Comparisons Full Model Seasonal - Precipitation.pdf", width=10, height=7.5)
-ggplot(data=precip.stack) + large.axes + facet_grid(Year~Season) +
-	geom_ribbon(aes(x=x.precip, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.precip, y=MLE, color=Species, linetype=Species), size=1.) +
+ggplot(data=precip.stack) + large.axes + facet_grid(Year~Season, scales="free") +
+	geom_ribbon(aes(x=x.precip, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.precip, y=MLE*100, color=Species, linetype=Species), size=1.) +
 	geom_vline(aes(xintercept=precip.min), linetype="dashed", color="black") + 
 	geom_vline(aes(xintercept=precip.max), linetype="dashed", color="black") + 
-	geom_ribbon(aes(x=Ribbon.min, ymin=0, ymax=1),fill="gray50", alpha=0.5) +
-	geom_ribbon(aes(x=Ribbon.max, ymin=0, ymax=1),fill="gray50", alpha=0.5) +
+	geom_ribbon(aes(x=Ribbon.min, ymin=0, ymax=100),fill="gray50", alpha=0.5) +
+	geom_ribbon(aes(x=Ribbon.max, ymin=0, ymax=100),fill="gray50", alpha=0.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	scale_x_continuous(name="Total Season Precip (mm)", breaks=c(50, 100, 150, 200)) + 
-	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1), breaks=seq(0, 1, 0.25)) +
+	scale_x_continuous(name="Total Season Precipitation (mm)", breaks=c(50, 100, 150, 200)) + 
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
 	theme(legend.position=c(0.12,0.8), legend.text=element_text(size=14), legend.title=element_text(size=rel(1.5))) + labs(fill="Species") + theme(strip.text=element_text(size=rel(1.5), face="bold"))
 dev.off()

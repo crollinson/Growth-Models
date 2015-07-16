@@ -232,12 +232,14 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 pdf("Figures/Species Comparisons Full Model Annual - Autogenic.pdf")
 ggplot(data=aut.stack) + large.axes +
 #	geom_ribbon(aes(x=x.auto, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
-	geom_ribbon(aes(x=x.auto, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.auto, y=MLE, color=Species, linetype=Species), size=1) +
+	geom_ribbon(aes(x=x.auto, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.auto, y=MLE*100, color=Species, linetype=Species), size=1) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
-	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1), breaks=seq(0, 1, 0.25)) +
-	theme(legend.position=c(0.85,0.75), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
+	theme(legend.position=c(0.85,0.75), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.2,0.1), "lines")) +
+	 labs(fill="Species")
 dev.off()
 
 # pdf("Figures/Species Comparisons Full Model Annual - Autogenic Gmax.pdf")
@@ -304,12 +306,14 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Species Comparisons Full Model Annual - Temperature.pdf")
 ggplot(data=temp.stack) + large.axes +
-	geom_ribbon(aes(x=x.temp-273, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.temp-273, y=MLE, color=Species, linetype=Species), size=1.5) +
+	geom_ribbon(aes(x=x.temp-273, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.temp-273, y=MLE*100, color=Species, linetype=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
-	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.0)) +
-	theme(legend.position=c(0.8,0.4), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100)) +
+	theme(legend.position=c(0.8,0.4), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.5,0.1), "lines")) +
+	labs(fill="Species")
 dev.off()
 
 
@@ -366,12 +370,14 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Species Comparisons Full Model Annual - Precipitation.pdf")
 ggplot(data=precip.stack) + large.axes +
-	geom_ribbon(aes(x=x.precip, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.precip, y=MLE, color=Species, linetype=Species), size=2) +
+	geom_ribbon(aes(x=x.precip, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.precip, y=MLE*100, color=Species, linetype=Species), size=2) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	scale_x_continuous(name="Annual Precip (mm)") + 
-	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.), breaks=c(0,0.25,0.5,0.75,1)) +
-	theme(legend.position=c(0.2,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
+	scale_x_continuous(name="Annual Precip (mm)", breaks=seq(800, 1600, 200)) + 
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100)) +
+	theme(legend.position=c(0.2,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,1.1,0.1), "lines")) +
+	labs(fill="Species")
 dev.off()
 
 
@@ -435,12 +441,14 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 pdf("Figures/Species Comparisons Full Model Annual - Competition.pdf")
 ggplot(data=comp.stack) + large.axes +
-	geom_ribbon(aes(x=x.relba, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
-	geom_line(aes(x=x.relba, y=MLE, color=Species, linetype=Species), size=1.5) +
+	geom_ribbon(aes(x=x.relba, ymin=Max*100, ymax=Min*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.relba, y=MLE*100, color=Species, linetype=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Relative Basal Area") + 
-	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0, 1.0)) +
-	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0, 100)) +
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,1.1,0.1), "lines")) +
+	labs(fill="Species")
 dev.off()
 
 # pdf("Figures/Species Comparisons Full Model Annual - Competition Gmax.pdf")
@@ -492,7 +500,7 @@ summary(scalars.annual)
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 ggplot(data=scalars.annual) + facet_wrap(~Factor, scales="free") + q.blank2 +
-	geom_ribbon(aes(x=X, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
+	geom_ribbon(aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
 	geom_line(aes(x=X, y=MLE, color=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
@@ -501,7 +509,7 @@ ggplot(data=scalars.annual) + facet_wrap(~Factor, scales="free") + q.blank2 +
 
 # Autogenic
 plot.auto <- ggplot(data=aut.stack) + q.blank2 +
-	geom_ribbon(aes(x=x.auto, ymin=Min, ymax=Max, fill=Species), alpha=0.3) +
+	geom_ribbon(aes(x=x.auto, ymin= CI.low, ymax= CI.hi, fill=Species), alpha=0.3) +
 	geom_line(aes(x=x.auto, y=MLE, color=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
@@ -511,7 +519,7 @@ plot.auto <- ggplot(data=aut.stack) + q.blank2 +
 
 # Competition
 plot.comp <- ggplot(data=comp.stack) + q.blank2 +
-	geom_ribbon(aes(x=x.relba, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
+	geom_ribbon(aes(x=x.relba, ymin= CI.low, ymax= CI.hi, fill=Species), alpha=0.3) +
 	geom_line(aes(x=x.relba, y=MLE, color=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Relative Basal Area") + scale_y_continuous(name="Percent Max Growth Rate", limits=c(0, 1.05)) +
@@ -520,7 +528,7 @@ plot.comp <- ggplot(data=comp.stack) + q.blank2 +
 
 # Temperature
 plot.temp <- ggplot(data=temp.stack) + q.blank2 +
-	geom_ribbon(aes(x=x.temp, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
+	geom_ribbon(aes(x=x.temp, ymin= CI.low, ymax= CI.hi, fill=Species), alpha=0.3) +
 	geom_line(aes(x=x.temp, y=MLE, color=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Annual Mean Temp (K)") + scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.05)) + theme(plot.title=element_text(face="bold")) +
@@ -529,7 +537,7 @@ plot.temp <- ggplot(data=temp.stack) + q.blank2 +
 
 # Precipitation
 plot.precip <- ggplot(data=precip.stack) + q.blank2 +
-	geom_ribbon(aes(x=x.precip, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
+	geom_ribbon(aes(x=x.precip, ymin= CI.low, ymax= CI.hi, fill=Species), alpha=0.3) +
 	geom_line(aes(x=x.precip, y=MLE, color=Species), size=1.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name="Annual Precip (mm)") + scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1.15), breaks=c(0,0.25,0.5,0.75,1)) +

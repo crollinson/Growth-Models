@@ -298,10 +298,10 @@ precip.seasonal <- function(species, PRECIP, FLOW, out, param.est, param.distrib
 		ci <- apply(precip.temp, 1, FUN=quantile, c(0.025, 0.975), na.rm=T)
 		range  <- apply(precip.temp, 1, FUN=range, na.rm=T)
 
-		out[start:(start+length(x.temp)-1),paste(s, "CI.low", sep=".")] <- ci[1,]
-		out[start:(start+length(x.temp)-1),paste(s, "CI.high", sep=".")] <- ci[2,]
-		out[start:(start+length(x.temp)-1),paste(s, "Min", sep=".")] <- range[1,]
-		out[start:(start+length(x.temp)-1),paste(s, "Max", sep=".")] <- range[2,]
+		out[start:(start+length(x.precip)-1),paste(s, "CI.low", sep=".")] <- ci[1,]
+		out[start:(start+length(x.precip)-1),paste(s, "CI.high", sep=".")] <- ci[2,]
+		out[start:(start+length(x.precip)-1),paste(s, "Min", sep=".")] <- range[1,]
+		out[start:(start+length(x.precip)-1),paste(s, "Max", sep=".")] <- range[2,]
 		}
 
 	
