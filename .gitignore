@@ -1,6 +1,8 @@
-Original/
-RawInputs/
-Seasonal/Inputs/
-Annual/Inputs/
+Original/*
+RawInputs/*
+Seasonal/Inputs/*
+Annual/Inputs/*
 .history
 *.history
+Figures/*
+Post-Processing/Figures/*
