@@ -6,3 +6,4 @@ Annual/Inputs/*
 *.history
 Figures/*
 Post-Processing/Figures/*
+*.Rdata
