@@ -2,8 +2,17 @@
 # Appendix figures: Distributions of predictor data plotted along size response curves for each species
 ####################################################################
 rm(list=ls())
+setwd("..")
+
 # Load already bootstrapped runs
-load("Species_Comparisons_FullModel_Ann.RData")
+load("Inputs/Scalars_Annual_Bootstrapped.Rdata")
+# model.data <- read.csv("Inputs/TargetSpecies_AllSites_Ann_1990-2011.csv")
+model.data <- read.csv("../RawInputs/CARCA_CoreData_Climate_Annual.csv")
+model.data$BA.tree.cm2 <- model.data$BA.tree/100
+
+# Subsetting the data to make our lives easier
+species <- c("ACRU", "QURU", "QUPR", "BELE", "NYSY")
+model.data <- model.data[(model.data$Spp %in% species) & model.data$Year>=1990 & model.data$Year<=2011,]
 
 library(likelihood)
 library(ggplot2)
@@ -35,46 +44,50 @@ length(model.data[model.data$Spp=="NYSY","TreeID"])
 length(model.data[model.data$Spp=="QUPR","TreeID"])
 length(model.data[model.data$Spp=="QURU","TreeID"])
 
-summary(comp.stack[comp.stack$Species=="ACRU",]) # MLE range: 0.19 - 0.60
-summary(comp.stack[comp.stack$Species=="BELE",]) # MLE range: 0.4433 - 1.000
-summary(comp.stack[comp.stack$Species=="NYSY",]) # MLE range: 0.4775 - 0.7870
-summary(comp.stack[comp.stack$Species=="QUPR",]) # MLE range: 0.9246 - 0.9938
-summary(comp.stack[comp.stack$Species=="QURU",]) # MLE range: 0.6572 - 1.000
+# Summary of competition
+summary(scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Competition",]) # MLE range: 0.19 - 0.60
+summary(scalars.annual[scalars.annual$Species=="BELE" & scalars.annual$Factor=="Competition",]) # MLE range: 0.4433 - 1.000
+summary(scalars.annual[scalars.annual$Species=="NYSY" & scalars.annual$Factor=="Competition",]) # MLE range: 0.4775 - 0.7870
+summary(scalars.annual[scalars.annual$Species=="QUPR" & scalars.annual$Factor=="Competition",]) # MLE range: 0.9246 - 0.9938
+summary(scalars.annual[scalars.annual$Species=="QURU" & scalars.annual$Factor=="Competition",]) # MLE range: 0.6572 - 1.000
 
+# # ---------------------------
+# # NOTE: This all needs to be updated to make sense now
+# # ---------------------------
+# # Looking at change in competition over the range(?)
+# acru.comp <- 1-min(scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Competition","MLE"])/max(scalars.annual[scalars.annual$Species=="ACRU","MLE"])
+# bele.comp <- 1-min(scalars.annual[scalars.annual$Species=="BELE" & scalars.annual$Factor=="Competition","MLE"])/max(scalars.annual[scalars.annual$Species=="BELE","MLE"])
+# nysy.comp <- 1-min(scalars.annual[scalars.annual$Species=="NYSY" & scalars.annual$Factor=="Competition","MLE"])/max(scalars.annual[scalars.annual$Species=="NYSY","MLE"])
+# qupr.comp <- 1-min(scalars.annual[scalars.annual$Species=="QUPR" & scalars.annual$Factor=="Competition","MLE"])/max(scalars.annual[scalars.annual$Species=="QUPR","MLE"])
+# quru.comp <- 1-min(scalars.annual[scalars.annual$Species=="QURU" & scalars.annual$Factor=="Competition","MLE"])/max(scalars.annual[scalars.annual$Species=="QURU","MLE"])
 
-acru.comp <- 1-min(comp.stack[comp.stack$Species=="ACRU","MLE"])/max(comp.stack[comp.stack$Species=="ACRU","MLE"])
-bele.comp <- 1-min(comp.stack[comp.stack$Species=="BELE","MLE"])/max(comp.stack[comp.stack$Species=="BELE","MLE"])
-nysy.comp <- 1-min(comp.stack[comp.stack$Species=="NYSY","MLE"])/max(comp.stack[comp.stack$Species=="NYSY","MLE"])
-qupr.comp <- 1-min(comp.stack[comp.stack$Species=="QUPR","MLE"])/max(comp.stack[comp.stack$Species=="QUPR","MLE"])
-quru.comp <- 1-min(comp.stack[comp.stack$Species=="QURU","MLE"])/max(comp.stack[comp.stack$Species=="QURU","MLE"])
+# comp <- c(acru.comp, bele.comp, nysy.comp, qupr.comp, quru.comp)
+# mean(comp); sd(comp)
 
-comp <- c(acru.comp, bele.comp, nysy.comp, qupr.comp, quru.comp)
-mean(comp); sd(comp)
+# # Doing something with temperature (not sure what)
+# acru.temp <- 1-min(scalars.annual[scalars.annual$Species=="ACRU","MLE"])/max(scalars.annual[scalars.annual$Species=="ACRU","MLE"])
+# bele.temp <- 1-min(scalars.annual[scalars.annual$Species=="BELE","MLE"])/max(scalars.annual[scalars.annual$Species=="BELE","MLE"])
+# nysy.temp <- 1-min(scalars.annual[scalars.annual$Species=="NYSY","MLE"])/max(scalars.annual[scalars.annual$Species=="NYSY","MLE"])
+# qupr.temp <- 1-min(scalars.annual[scalars.annual$Species=="QUPR","MLE"])/max(scalars.annual[scalars.annual$Species=="QUPR","MLE"])
+# quru.temp <- 1-min(scalars.annual[scalars.annual$Species=="QURU","MLE"])/max(scalars.annual[scalars.annual$Species=="QURU","MLE"])
 
+# temp <- c(acru.temp, bele.temp, nysy.temp, qupr.temp, quru.temp)
+# mean(temp); sd(temp)
 
-acru.temp <- 1-min(temp.stack[temp.stack$Species=="ACRU","MLE"])/max(temp.stack[temp.stack$Species=="ACRU","MLE"])
-bele.temp <- 1-min(temp.stack[temp.stack$Species=="BELE","MLE"])/max(temp.stack[temp.stack$Species=="BELE","MLE"])
-nysy.temp <- 1-min(temp.stack[temp.stack$Species=="NYSY","MLE"])/max(temp.stack[temp.stack$Species=="NYSY","MLE"])
-qupr.temp <- 1-min(temp.stack[temp.stack$Species=="QUPR","MLE"])/max(temp.stack[temp.stack$Species=="QUPR","MLE"])
-quru.temp <- 1-min(temp.stack[temp.stack$Species=="QURU","MLE"])/max(temp.stack[temp.stack$Species=="QURU","MLE"])
+# acru.precip <- 1-min(scalars.annual[scalars.annual$Species=="ACRU","MLE"])/max(scalars.annual[scalars.annual$Species=="ACRU","MLE"])
+# bele.precip <- 1-min(scalars.annual[scalars.annual$Species=="BELE","MLE"])/max(scalars.annual[scalars.annual$Species=="BELE","MLE"])
+# nysy.precip <- 1-min(scalars.annual[scalars.annual$Species=="NYSY","MLE"])/max(scalars.annual[scalars.annual$Species=="NYSY","MLE"])
+# qupr.precip <- 1-min(scalars.annual[scalars.annual$Species=="QUPR","MLE"])/max(scalars.annual[scalars.annual$Species=="QUPR","MLE"])
+# quru.precip <- 1-min(scalars.annual[scalars.annual$Species=="QURU","MLE"])/max(scalars.annual[scalars.annual$Species=="QURU","MLE"])
 
-temp <- c(acru.temp, bele.temp, nysy.temp, qupr.temp, quru.temp)
-mean(temp); sd(temp)
+# precip <- c(acru.precip, bele.precip, nysy.precip, qupr.precip, quru.precip)
+# mean(precip); sd(precip)
 
-acru.precip <- 1-min(precip.stack[precip.stack$Species=="ACRU","MLE"])/max(precip.stack[precip.stack$Species=="ACRU","MLE"])
-bele.precip <- 1-min(precip.stack[precip.stack$Species=="BELE","MLE"])/max(precip.stack[precip.stack$Species=="BELE","MLE"])
-nysy.precip <- 1-min(precip.stack[precip.stack$Species=="NYSY","MLE"])/max(precip.stack[precip.stack$Species=="NYSY","MLE"])
-qupr.precip <- 1-min(precip.stack[precip.stack$Species=="QUPR","MLE"])/max(precip.stack[precip.stack$Species=="QUPR","MLE"])
-quru.precip <- 1-min(precip.stack[precip.stack$Species=="QURU","MLE"])/max(precip.stack[precip.stack$Species=="QURU","MLE"])
-
-precip <- c(acru.precip, bele.precip, nysy.precip, qupr.precip, quru.precip)
-mean(precip); sd(precip)
-
-acru.temp; acru.precip
-bele.temp; bele.precip
-nysy.temp; nysy.precip
-qupr.temp; qupr.precip
-quru.temp; quru.precip
+# acru.temp; acru.precip
+# bele.temp; bele.precip
+# nysy.temp; nysy.precip
+# qupr.temp; qupr.precip
+# quru.temp; quru.precip
 
 ##################################################################################
 # ACRU data distributions
@@ -83,44 +96,44 @@ summary(model.data[model.data$Spp=="ACRU",])
 
 
 # Autogenic
-summary(aut.stack)
+summary(scalars.annual)
 acru.aut <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x=BA.tree.cm2, weight=1/length(BA.tree.cm2)*2), col="gray50") +
-	geom_ribbon(data=aut.stack[aut.stack$Species=="ACRU", ], aes(x=x.auto, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=aut.stack[aut.stack$Species=="ACRU", ], aes(x=x.auto, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x= BA.tree.cm2, weight=1/length(BA.tree.cm2)), color="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Size", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Size", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="purple") + scale_fill_manual(values="purple") +
 	scale_x_continuous(name="Tree Basal Area (cm2)", limit=range(model.data$BA.tree.cm2, na.rm=T)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Relative BA
-summary(comp.stack)
+summary(scalars.annual)
 acru.comp <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x=RelBA, weight=1/length(RelBA)*2), col="gray50") +
-	geom_ribbon(data=comp.stack[comp.stack$Species=="ACRU", ], aes(x=x.relba, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=comp.stack[comp.stack$Species=="ACRU", ], aes(x=x.relba, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x=RelBA, weight=1/length(RelBA)), col="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Competition", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Competition", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="purple") + scale_fill_manual(values="purple") +
 	scale_x_continuous(name="Relative Basal Area", limit=c(0,1)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Temperature
-summary(temp.stack)
+summary(scalars.annual)
 acru.temp <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x=temp.yr, weight=1/length(temp.yr)*2), col="gray50") +
-	geom_ribbon(data=temp.stack[temp.stack$Species=="ACRU", ], aes(x=x.temp, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=temp.stack[temp.stack$Species=="ACRU", ], aes(x= x.temp, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x=Tavg, weight=1/length(Tavg)), col="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Temperature", ], aes(x=X-273, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Temperature", ], aes(x=X-273, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="purple") + scale_fill_manual(values="purple") +
-	scale_x_continuous(name="Tmean (K)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
+	scale_x_continuous(name="Tmean (C)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Precipitation
-summary(precip.stack)
+summary(scalars.annual)
 acru.precip <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x=ppt.yr, weight=1/length(ppt.yr)*2), col="gray50") +
-	geom_ribbon(data=precip.stack[precip.stack$Species=="ACRU", ], aes(x=x.precip, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=precip.stack[precip.stack$Species=="ACRU", ], aes(x=x.precip, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="ACRU",], aes(x= Precip.PRISM.sum, weight=1/length(Precip.PRISM.sum)), col="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Precipitation", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="ACRU" & scalars.annual$Factor=="Precipitation", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="purple") + scale_fill_manual(values="purple") +
 	scale_x_continuous(name="Precipitation (mm)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
@@ -140,44 +153,44 @@ dev.off()
 summary(model.data[model.data$Spp=="BELE",])
 
 # Autogenic
-summary(aut.stack)
+summary(scalars.annual)
 bele.aut <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="BELE",], aes(x=BA.tree.cm2, weight=1/length(BA.tree.cm2)*2), col="gray50") +
-	geom_ribbon(data=aut.stack[aut.stack$Species=="BELE", ], aes(x=x.auto, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=aut.stack[aut.stack$Species=="BELE", ], aes(x=x.auto, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="blue") + scale_fill_manual(values="blue") +
 	scale_x_continuous(name="Tree Basal Area (cm2)", limit=range(model.data$BA.tree.cm2, na.rm=T)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Relative BA
-summary(comp.stack)
+summary(scalars.annual)
 bele.comp <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="BELE",], aes(x=RelBA, weight=1/length(RelBA)*2), col="gray50") +
-	geom_ribbon(data=comp.stack[comp.stack$Species=="BELE", ], aes(x=x.relba, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=comp.stack[comp.stack$Species=="BELE", ], aes(x=x.relba, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="blue") + scale_fill_manual(values="blue") +
 	scale_x_continuous(name="Relative Basal Area", limit=c(0,1)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Temperature
-summary(temp.stack)
+summary(scalars.annual)
 bele.temp <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="BELE",], aes(x=temp.yr, weight=1/length(temp.yr)*2), col="gray50") +
-	geom_ribbon(data=temp.stack[temp.stack$Species=="BELE", ], aes(x=x.temp, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=temp.stack[temp.stack$Species=="BELE", ], aes(x= x.temp, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="BELE",], aes(x=Tavg, weight=1/length(Tavg)*2), col="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x= X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="blue") + scale_fill_manual(values="blue") +
 	scale_x_continuous(name="Tmean (K)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Precipitation
-summary(precip.stack)
+summary(scalars.annual)
 bele.precip <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="BELE",], aes(x=ppt.yr, weight=1/length(ppt.yr)*2), col="gray50") +
-	geom_ribbon(data=precip.stack[precip.stack$Species=="BELE", ], aes(x=x.precip, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=precip.stack[precip.stack$Species=="BELE", ], aes(x=x.precip, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="BELE", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="blue") + scale_fill_manual(values="blue") +
 	scale_x_continuous(name="Precipitation (mm)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
@@ -197,44 +210,44 @@ dev.off()
 summary(model.data[model.data$Spp=="NYSY",])
 
 # Autogenic
-summary(aut.stack)
+summary(scalars.annual)
 nysy.aut <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="NYSY",], aes(x=BA.tree.cm2, weight=1/length(BA.tree.cm2)*2), col="gray50") +
-	geom_ribbon(data=aut.stack[aut.stack$Species=="NYSY", ], aes(x=x.auto, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=aut.stack[aut.stack$Species=="NYSY", ], aes(x=x.auto, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="green3") + scale_fill_manual(values="green3") +
 	scale_x_continuous(name="Tree Basal Area (cm2)", limit=range(model.data$BA.tree.cm2, na.rm=T)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Relative BA
-summary(comp.stack)
+summary(scalars.annual)
 nysy.comp <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="NYSY",], aes(x=RelBA, weight=1/length(RelBA)*2), col="gray50") +
-	geom_ribbon(data=comp.stack[comp.stack$Species=="NYSY", ], aes(x=x.relba, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=comp.stack[comp.stack$Species=="NYSY", ], aes(x=x.relba, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="green3") + scale_fill_manual(values="green3") +
 	scale_x_continuous(name="Relative Basal Area", limit=c(0,1)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Temperature
-summary(temp.stack)
+summary(scalars.annual)
 nysy.temp <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="NYSY",], aes(x=temp.yr, weight=1/length(temp.yr)*2), col="gray50") +
-	geom_ribbon(data=temp.stack[temp.stack$Species=="NYSY", ], aes(x=x.temp, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=temp.stack[temp.stack$Species=="NYSY", ], aes(x= x.temp, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="NYSY",], aes(x=Tavg, weight=1/length(Tavg)*2), col="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x= X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="green3") + scale_fill_manual(values="green3") +
 	scale_x_continuous(name="Tmean (K)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Precipitation
-summary(precip.stack)
+summary(scalars.annual)
 nysy.precip <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="NYSY",], aes(x=ppt.yr, weight=1/length(ppt.yr)*2), col="gray50") +
-	geom_ribbon(data=precip.stack[precip.stack$Species=="NYSY", ], aes(x=x.precip, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=precip.stack[precip.stack$Species=="NYSY", ], aes(x=x.precip, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="NYSY", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="green3") + scale_fill_manual(values="green3") +
 	scale_x_continuous(name="Precipitation (mm)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
@@ -255,44 +268,44 @@ dev.off()
 summary(model.data[model.data$Spp=="QUPR",])
 
 # Autogenic
-summary(aut.stack)
+summary(scalars.annual)
 qupr.aut <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="QUPR",], aes(x=BA.tree.cm2, weight=1/length(BA.tree.cm2)*2), col="gray50") +
-	geom_ribbon(data=aut.stack[aut.stack$Species=="QUPR", ], aes(x=x.auto, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=aut.stack[aut.stack$Species=="QUPR", ], aes(x=x.auto, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="orange") + scale_fill_manual(values="orange") +
 	scale_x_continuous(name="Tree Basal Area (cm2)", limit=range(model.data$BA.tree.cm2, na.rm=T)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Relative BA
-summary(comp.stack)
+summary(scalars.annual)
 qupr.comp <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="QUPR",], aes(x=RelBA, weight=1/length(RelBA)*2), col="gray50") +
-	geom_ribbon(data=comp.stack[comp.stack$Species=="QUPR", ], aes(x=x.relba, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=comp.stack[comp.stack$Species=="QUPR", ], aes(x=x.relba, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="orange") + scale_fill_manual(values="orange") +
 	scale_x_continuous(name="Relative Basal Area", limit=c(0,1)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Temperature
-summary(temp.stack)
+summary(scalars.annual)
 qupr.temp <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="QUPR",], aes(x=temp.yr, weight=1/length(temp.yr)*2), col="gray50") +
-	geom_ribbon(data=temp.stack[temp.stack$Species=="QUPR", ], aes(x=x.temp, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=temp.stack[temp.stack$Species=="QUPR", ], aes(x= x.temp, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="QUPR",], aes(x=Tavg, weight=1/length(Tavg)*2), col="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x= X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="orange") + scale_fill_manual(values="orange") +
 	scale_x_continuous(name="Tmean (K)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Precipitation
-summary(precip.stack)
+summary(scalars.annual)
 qupr.precip <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="QUPR",], aes(x=ppt.yr, weight=1/length(ppt.yr)*2), col="gray50") +
-	geom_ribbon(data=precip.stack[precip.stack$Species=="QUPR", ], aes(x=x.precip, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=precip.stack[precip.stack$Species=="QUPR", ], aes(x=x.precip, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QUPR", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="orange") + scale_fill_manual(values="orange") +
 	scale_x_continuous(name="Precipitation (mm)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
@@ -313,44 +326,44 @@ dev.off()
 summary(model.data[model.data$Spp=="QURU",])
 
 # Autogenic
-summary(aut.stack)
+summary(scalars.annual)
 quru.aut <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="QURU",], aes(x=BA.tree.cm2, weight=1/length(BA.tree.cm2)*2), col="gray50") +
-	geom_ribbon(data=aut.stack[aut.stack$Species=="QURU", ], aes(x=x.auto, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=aut.stack[aut.stack$Species=="QURU", ], aes(x=x.auto, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="red") + scale_fill_manual(values="red") +
 	scale_x_continuous(name="Tree Basal Area (cm2)", limit=range(model.data$BA.tree.cm2, na.rm=T)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Relative BA
-summary(comp.stack)
+summary(scalars.annual)
 quru.comp <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="QURU",], aes(x=RelBA, weight=1/length(RelBA)*2), col="gray50") +
-	geom_ribbon(data=comp.stack[comp.stack$Species=="QURU", ], aes(x=x.relba, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=comp.stack[comp.stack$Species=="QURU", ], aes(x=x.relba, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="red") + scale_fill_manual(values="red") +
 	scale_x_continuous(name="Relative Basal Area", limit=c(0,1)) + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Temperature
-summary(temp.stack)
+summary(scalars.annual)
 quru.temp <- ggplot() + q.blank2 +
-	geom_histogram(data=model.data[model.data$Spp=="QURU",], aes(x=temp.yr, weight=1/length(temp.yr)*2), col="gray50") +
-	geom_ribbon(data=temp.stack[temp.stack$Species=="QURU", ], aes(x=x.temp, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=temp.stack[temp.stack$Species=="QURU", ], aes(x= x.temp, y=MLE, color=Species), size=2) +
+	geom_histogram(data=model.data[model.data$Spp=="QURU",], aes(x=Tavg, weight=1/length(Tavg)*2), col="gray50") +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x= X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="red") + scale_fill_manual(values="red") +
 	scale_x_continuous(name="Tmean (K)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
 	# theme(legend.position=c(0.85,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 
 # Precipitation
-summary(precip.stack)
+summary(scalars.annual)
 quru.precip <- ggplot() + q.blank2 +
 	geom_histogram(data=model.data[model.data$Spp=="QURU",], aes(x=ppt.yr, weight=1/length(ppt.yr)*2), col="gray50") +
-	geom_ribbon(data=precip.stack[precip.stack$Species=="QURU", ], aes(x=x.precip, ymin=MLE-1.96*boot.sd, ymax=MLE+1.96*boot.sd, fill=Species), alpha=0.3) +
-	geom_line(data=precip.stack[precip.stack$Species=="QURU", ], aes(x=x.precip, y=MLE, color=Species), size=2) +
+	geom_ribbon(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_line(data=scalars.annual[scalars.annual$Species=="QURU", ], aes(x=X, y=MLE, color=Species), size=2) +
 	scale_color_manual(values="red") + scale_fill_manual(values="red") +
 	scale_x_continuous(name="Precipitation (mm)") + scale_y_continuous(name="Percent", limits=c(0,1.2), breaks=seq(0, 1, 0.25)) +
 	guides(fill=F, color=F)
