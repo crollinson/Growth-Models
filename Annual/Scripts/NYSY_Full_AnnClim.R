@@ -9,7 +9,7 @@
 ####################################################
 rm(list=ls())
 
-data_directory <- "~/CARCA/Growth-Models/Annual/"
+data_directory <- ".."
 #memory.size(4024)
 setwd(data_directory)
 library(likelihood)
@@ -35,7 +35,7 @@ summary(nysy.all)
 dim(nysy.all)
 
 # Subsetting only complete cases & a small range of years
-nysy.run <- nysy.all[complete.cases(nysy.all) & nysy.all$Year>=1990 & nysy.all$Year<=2011,]
+nysy.run <- nysy.all[complete.cases(nysy.all[,c("BAI", "Tavg", "Precip.PRISM")])) & nysy.all$Year>=1990 & nysy.all$Year<=2011,]
 summary(nysy.run)
 dim(nysy.run)
 

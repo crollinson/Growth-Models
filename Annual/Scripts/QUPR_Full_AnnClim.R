@@ -9,7 +9,7 @@
 ####################################################
 rm(list=ls())
 
-data_directory <- "~/CARCA/Growth-Models/Annual/"
+data_directory <- ".."
 #memory.size(4024)
 setwd(data_directory)
 library(likelihood)
@@ -35,7 +35,7 @@ summary(qupr.all)
 dim(qupr.all)
 
 # Subsetting only complete cases & a small range of years
-qupr.run <- qupr.all[complete.cases(qupr.all) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
+qupr.run <- qupr.all[complete.cases(qupr.all[,c("BAI", "Tavg", "Precip.PRISM")]) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
 summary(qupr.run)
 dim(qupr.run)
 

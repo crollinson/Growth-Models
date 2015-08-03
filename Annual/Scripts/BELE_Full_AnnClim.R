@@ -9,7 +9,7 @@
 ####################################################
 rm(list=ls())
 
-data_directory <- "~/CARCA/Growth-Models/Annual/"
+data_directory <- ".."
 #memory.size(4024)
 setwd(data_directory)
 library(likelihood)
@@ -35,7 +35,7 @@ summary(bele.all)
 dim(bele.all)
 
 # Subsetting only complete cases & a small range of years
-bele.run <- bele.all[complete.cases(bele.all) & bele.all$Year>=1990 & bele.all$Year<=2011,]
+bele.run <- bele.all[complete.cases(bele.all[,c("BAI", "Tavg", "Precip.PRISM")]) & bele.all$Year>=1990 & bele.all$Year<=2011,]
 summary(bele.run)
 dim(bele.run)
 

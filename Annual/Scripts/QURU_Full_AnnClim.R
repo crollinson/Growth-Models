@@ -9,7 +9,7 @@
 ####################################################
 rm(list=ls())
 
-data_directory <- "~/CARCA/Growth-Models/Annual/"
+data_directory <- ".."
 #memory.size(4024)
 setwd(data_directory)
 library(likelihood)
@@ -35,7 +35,7 @@ summary(quru.all)
 dim(quru.all)
 
 # Subsetting only complete cases & a small range of years
-quru.run <- quru.all[complete.cases(quru.all) & quru.all$Year>=1990 & quru.all$Year<=2011,]
+quru.run <- quru.all[complete.cases(quru.all[,c("BAI", "Tavg", "Precip.PRISM")]) & quru.all$Year>=1990 & quru.all$Year<=2011,]
 summary(quru.run)
 dim(quru.run)
 
