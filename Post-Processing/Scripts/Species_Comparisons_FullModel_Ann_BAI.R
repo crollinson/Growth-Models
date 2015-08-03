@@ -514,6 +514,7 @@ summary(temp.max.stack)
 temp.stack <- rbind(temp.mean.stack, temp.min.stack, temp.max.stack)
 summary(temp.stack)
 
+save(temp.stack, file="Inputs/Interactions_Bootstrapped_Temp_Precip.Rdata")
 # ---------------------
 # Some statistics for the manuscript
 # ---------------------
@@ -1392,6 +1393,9 @@ temp.stack$PlotBA <- as.factor(substr(temp.stack$Succ, 12, 28))
 temp.stack$Scenario <- temp.stack$Succ
 levels(temp.stack$Scenario) <- c("Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4")
 summary(temp.stack)
+
+temp.comp.stack <- temp.stack
+save(temp.comp.stack, file="Inputs/Interactions_Bootstrapped_Temp_Size_Comp.Rdata")
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 

@@ -44,9 +44,9 @@ large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.
 
 ####################################################################
 
-model.data <- read.csv("Inputs/TargetSpecies_AllSites_Ann_1990-2011.csv")
-summary(model.data)
-length(unique(model.data$TreeID))
+# # model.data <- read.csv("Inputs/TargetSpecies_AllSites_Ann_1990-2011.csv")
+# summary(model.data)
+# length(unique(model.data$TreeID))
 
 # months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
 
@@ -175,7 +175,7 @@ param.means <- rowMeans(param.distrib[,3:ncol(param.distrib)])
 ##################################################################################
 # Autogenic: Size = Basal Area of tree (cm2); BootStrapped
 ##################################################################################
-x.auto <- seq(min(model.data[model.data$Spp==s, "BA.tree.cm2"]), max(model.data[model.data$Spp==s, "BA.tree.cm2"]), length=250)
+x.auto <- seq(min(model.data[, "BA.tree.cm2"]), max(model.data[, "BA.tree.cm2"]), length=250)
 
 ##########################
 # Some Initial Data Frames
@@ -191,7 +191,10 @@ names(aut.response) <- "x.auto"
 
 
 for(s in unique(param.distrib$Species)){
-	aut.response <- aut.predict(s, x.auto, aut.response, param.est, param.distrib, n=250)
+	x.auto.spp <- seq(min(model.data[model.data$Spp==s, "BA.tree.cm2"]), max(model.data[model.data$Spp==s, "BA.tree.cm2"]), length=250)
+	# x.auto.spp <- x.auto
+	aut.response <- aut.predict(species=s, SIZE=x.auto.spp, out=aut.response, param.est=param.est, param.distrib=param.distrib, n=250)
+	# test <- aut.predict(s, x.auto.spp, aut.response, param.est, param.distrib, n=250)
 	}
 
 summary(aut.response)
@@ -230,16 +233,16 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 
 # pdf("Figures/Species Comparisons Full Model Annual - Autogenic.pdf")
-# ggplot(data=aut.stack) + large.axes +
-# #	geom_ribbon(aes(x=x.auto, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
-	# geom_ribbon(aes(x=x.auto, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
-	# geom_line(aes(x=x.auto, y=MLE*100, color=Species, linetype=Species), size=1) +
-	# scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	# xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
-	# scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
-	# theme(legend.position=c(0.85,0.75), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
-	 # theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.2,0.1), "lines")) +
-	 # labs(fill="Species")
+ggplot(data=aut.stack) + large.axes +
+#	geom_ribbon(aes(x=x.auto, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
+	geom_ribbon(aes(x=x.auto, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.auto, y=MLE*100, color=Species, linetype=Species), size=1) +
+	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
+	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
+	theme(legend.position=c(0.85,0.75), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.2,0.1), "lines")) +
+	 labs(fill="Species")
 # dev.off()
 
 # # pdf("Figures/Species Comparisons Full Model Annual - Autogenic Gmax.pdf")
@@ -272,7 +275,9 @@ names(temp.response) <- "x.temp"
 temp.response[,1] <- x.temp
 
 for(s in unique(param.distrib$Species)){
-	temp.response <- temp.ann(s, x.temp, temp.response, param.est, param.distrib, n=250)	
+	x.temp.spp <- seq(min(model.data[model.data$Spp==s, "Tavg"]), max(model.data[model.data$Spp==s, "Tavg"]), length=250)+273
+
+	temp.response <- temp.ann(s, x.temp.spp, temp.response, param.est, param.distrib, n=250)	
 }
 
 summary(temp.response)
@@ -305,15 +310,15 @@ temp.stack$Max <- temp.stack5[,1]
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 # pdf("Figures/Species Comparisons Full Model Annual - Temperature.pdf")
-# ggplot(data=temp.stack) + large.axes +
-	# geom_ribbon(aes(x=x.temp-273, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
-	# geom_line(aes(x=x.temp-273, y=MLE*100, color=Species, linetype=Species), size=1.5) +
-	# scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	# scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
-	# scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100)) +
-	# theme(legend.position=c(0.8,0.4), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
-	 # theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.5,0.1), "lines")) +
-	# labs(fill="Species")
+ggplot(data=temp.stack) + large.axes +
+	geom_ribbon(aes(x=x.temp-273, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.temp-273, y=MLE*100, color=Species, linetype=Species), size=1.5) +
+	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
+	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100)) +
+	theme(legend.position=c(0.8,0.4), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.5,0.1), "lines")) +
+	labs(fill="Species")
 # dev.off()
 
 
@@ -337,8 +342,10 @@ names(precip.response) <- "x.precip"
 precip.response[,1] <- x.precip
 
 for(s in unique(param.distrib$Species)){
+	x.precip.spp <- seq(min(model.data[model.data$Spp==s, "Precip.PRISM.sum"]), max(model.data[model.data$Spp==s, "Precip.PRISM.sum"]), length=250)
+
 	flow <- mean(model.data$flow)
-	precip.response <- precip.ann(s, x.precip, flow, precip.response, param.est, param.distrib, n=250)
+	precip.response <- precip.ann(s, x.precip.spp, flow, precip.response, param.est, param.distrib, n=250)
 	}
 
 summary(precip.response)
@@ -369,15 +376,15 @@ precip.stack$Max <- precip.stack5[,1]
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 # pdf("Figures/Species Comparisons Full Model Annual - Precipitation.pdf")
-# ggplot(data=precip.stack) + large.axes +
-	# geom_ribbon(aes(x=x.precip, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
-	# geom_line(aes(x=x.precip, y=MLE*100, color=Species, linetype=Species), size=2) +
-	# scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	# scale_x_continuous(name="Annual Precip (mm)", breaks=seq(800, 1600, 200)) + 
-	# scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100)) +
-	# theme(legend.position=c(0.2,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
-	# theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,1.1,0.1), "lines")) +
-	# labs(fill="Species")
+ggplot(data=precip.stack) + large.axes +
+	geom_ribbon(aes(x=x.precip, ymin=Min*100, ymax=Max*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.precip, y=MLE*100, color=Species, linetype=Species), size=2) +
+	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
+	scale_x_continuous(name="Annual Precip (mm)", breaks=seq(800, 1600, 200)) + 
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100)) +
+	theme(legend.position=c(0.2,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,1.1,0.1), "lines")) +
+	labs(fill="Species")
 # dev.off()
 
 
@@ -403,7 +410,7 @@ comp.response[,1] <- x.relba
 
 for(s in unique(param.distrib$Species)){
 	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"]), max(model.data[model.data$Spp==s, "RelBA"]), length=250)
-	plot.ba <- mean(model.data$BA.m2ha)
+	plot.ba <- mean(model.data[model.data$Spp==s, "BA.m2ha"])
 	comp.response <- comp.predict(s, x.relba, plot.ba, comp.response, param.est, param.distrib, n=250)
 	}
 summary(comp.response)
@@ -440,15 +447,15 @@ summary(comp.stack)
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
 # pdf("Figures/Species Comparisons Full Model Annual - Competition.pdf")
-# ggplot(data=comp.stack) + large.axes +
-	# geom_ribbon(aes(x=x.relba, ymin=Max*100, ymax=Min*100, fill=Species), alpha=0.3) +
-	# geom_line(aes(x=x.relba, y=MLE*100, color=Species, linetype=Species), size=1.5) +
-	# scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	# scale_x_continuous(name="Relative Basal Area") + 
-	# scale_y_continuous(name="Growth Rate (% Max)", limits=c(0, 100)) +
-	# theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
-	 # theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,1.1,0.1), "lines")) +
-	# labs(fill="Species")
+ggplot(data=comp.stack) + large.axes +
+	geom_ribbon(aes(x=x.relba, ymin=Max*100, ymax=Min*100, fill=Species), alpha=0.3) +
+	geom_line(aes(x=x.relba, y=MLE*100, color=Species, linetype=Species), size=1.5) +
+	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
+	scale_x_continuous(name="Relative Basal Area") + 
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0, 100)) +
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,1.1,0.1), "lines")) +
+	labs(fill="Species")
 # dev.off()
 
 # # pdf("Figures/Species Comparisons Full Model Annual - Competition Gmax.pdf")
@@ -498,6 +505,8 @@ scalars.annual <- rbind(aut.stack2, comp.stack2, precip.stack, temp.stack)
 summary(scalars.annual)
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
+
+# load("Inputs/Scalars_Annual_Bootstrapped.Rdata")
 
 # ggplot(data=scalars.annual) + facet_wrap(~Factor, scales="free") + q.blank2 +
 	# geom_ribbon(aes(x=X, ymin=CI.low, ymax=CI.hi, fill=Species), alpha=0.3) +
@@ -554,7 +563,6 @@ species.colors <- c("purple", "blue", "green3", "orange", "red")
 # Save everything for use elsewhere
 ##################################################################################
 save(scalars.annual, file="Inputs/Scalars_Annual_Bootstrapped.Rdata")
-
 
 
 

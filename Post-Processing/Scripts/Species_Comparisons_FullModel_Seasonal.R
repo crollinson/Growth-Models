@@ -90,18 +90,18 @@ min(model.data[ ,precip.col.ind]); max(model.data[ ,precip.col.ind])
 ####################################################################
 # Making a csv with parameter estimates
 ####################################################################
-load("../Seasonal/Outputs/ACRU_Full_Season_Results.Rdata")
-acru.results <- results
-load("../Seasonal/Outputs/BELE_Full_Season_Results.Rdata")
-bele.results <- results
-load("../Seasonal/Outputs/NYSY_Full_Season_Results.Rdata")
-nysy.results <- results
-load("../Seasonal/Outputs/QUPR_Full_Season_Results.Rdata")
-qupr.results <- results
-load("../Seasonal/Outputs/QURU_Full_Season_Results.Rdata")
-quru.results <- results
+# load("../Seasonal/Outputs/ACRU_Full_Season_Results.Rdata")
+# acru.results <- results
+# load("../Seasonal/Outputs/BELE_Full_Season_Results.Rdata")
+# bele.results <- results
+# load("../Seasonal/Outputs/NYSY_Full_Season_Results.Rdata")
+# nysy.results <- results
+# load("../Seasonal/Outputs/QUPR_Full_Season_Results.Rdata")
+# qupr.results <- results
+# load("../Seasonal/Outputs/QURU_Full_Season_Results.Rdata")
+# quru.results <- results
 
-# #-----------------------------------
+# # #-----------------------------------
 # # Looking at autocorrelation quickly
 # #-----------------------------------
 # # Calculating residuals
@@ -195,7 +195,8 @@ names(aut.response) <- "x.auto"
 
 
 for(s in unique(param.distrib$Species)){
-	aut.response <- aut.predict(s, x.auto, aut.response, param.est, param.distrib, n=n)
+	x.auto.spp <- seq(min(model.data[model.data$Spp==s, "BA.tree.cm2"]), max(model.data[model.data$Spp==s, "BA.tree.cm2"]), length=250)
+	aut.response <- aut.predict(s, x.auto.spp, aut.response, param.est, param.distrib, n=n)
 	}
 
 summary(aut.response)
@@ -262,7 +263,7 @@ comp.response[,1] <- x.relba
 
 for(s in unique(param.distrib$Species)){
 	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"]), max(model.data[model.data$Spp==s, "RelBA"]), length=n)
-	plot.ba <- mean(model.data$BA.m2ha)
+	plot.ba <- mean(model.data[model.data$Spp==s, "BA.m2ha"])
 	comp.response <- comp.predict(s, x.relba, plot.ba, comp.response, param.est, param.distrib, n=n)
 	}
 summary(comp.response)
@@ -343,7 +344,7 @@ for(i in 1:length(seasons)){
 temp.temp <- data.frame(array(dim=c(nrow(x.temp),1)))
 # row.names(temp.temp) <- x.temp
 
-# Data frame where the summary (mean & SD) of the runs will be placed
+# # Data frame where the summary (mean & SD) of the runs will be placed
 # temp.response <- data.frame(array(dim=c(length(x.temp),1)))
 # names(temp.response) <- "x.temp"
 # temp.response[,1] <- x.temp
@@ -366,7 +367,7 @@ names(temp.response)
 temp.stack <- stack(temp.response[,substr(names(temp.response),6,9)=="temp"])
 names(temp.stack) <- c("x.temp", "Species")
 temp.stack$Species <- as.factor(substr(temp.stack$Species, 1, 4))
-temp.stack$season.code <- temp.response$Season
+temp.stack$season.code <- as.factor(substr(x.names,1,1))
 temp.stack$Year <- as.factor(ifelse(temp.stack$season.code==1 | temp.stack$season.code==2,"-1","1"))
 levels(temp.stack$Year) <- c("Previous", "Current")
 temp.stack$Season <- recode(temp.stack$season.code, "'1'='3'; '2'='4'; '3'='1'; '4'='2'; '5'='3'; '6'='4'")
@@ -430,7 +431,7 @@ ggplot(data=temp.stack) + large.axes + facet_grid(Year~Season, scale="free") +
 
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name=expression(bold(paste("Mean Season Temperature ("^"o","C)")))) + 
-	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,105), breaks=seq(0, 100, 25), expand=c(0,0)) +
 	theme(legend.position=c(0.12,0.8), legend.text=element_text(size=14), legend.title=element_text(size=rel(1.5))) + labs(fill="Species") + theme(strip.text=element_text(size=rel(1.5), face="bold"))
 dev.off()
 
@@ -450,7 +451,7 @@ seasons
 x.precip <- data.frame(array(dim=c(n,length(seasons))))
 names(x.precip) <- seasons
 for(i in seasons){
-	x.precip[,i] <- seq(min(model.data[,paste("Precip", i, sep=".")])-5, max(model.data[,paste("Precip", i, sep=".")])+5, length=n)
+	x.precip[,i] <- seq(min(model.data[,paste("Precip", i, sep=".")])-50, max(model.data[,paste("Precip", i, sep=".")])+50, length=n)
 }
 #x.precip2 <- x.precip2[,3:length(x.precip2)]
 summary(x.precip)
@@ -494,8 +495,8 @@ names(precip.response)
 precip.stack <- stack(precip.response[,substr(names(precip.response),6,11)=="precip"])
 names(precip.stack) <- c("x.precip", "Species")
 precip.stack$Species <- as.factor(substr(precip.stack$Species, 1, 4))
-precip.stack$x.precip <- precip.response$x.precip
-precip.stack$season.code <- precip.response$Season
+# precip.stack$x.precip <- precip.response$x.precip
+precip.stack$season.code <- as.factor(substr(x.names,1,1))
 precip.stack$Year <- as.factor(ifelse(precip.stack$season.code==1 | precip.stack$season.code==2,"-1","1"))
 levels(precip.stack$Year) <- c("Previous", "Current")
 precip.stack$Season <- recode(precip.stack$season.code, "'1'='3'; '2'='4'; '3'='1'; '4'='2'; '5'='3'; '6'='4'")
@@ -560,7 +561,9 @@ ggplot(data=precip.stack) + large.axes + facet_grid(Year~Season, scales="free") 
 	geom_ribbon(aes(x=Ribbon.min, ymin=0, ymax=100),fill="gray50", alpha=0.5) +
 	geom_ribbon(aes(x=Ribbon.max, ymin=0, ymax=100),fill="gray50", alpha=0.5) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
-	scale_x_continuous(name="Total Season Precipitation (mm)", breaks=c(50, 100, 150, 200)) + 
-	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
+	scale_x_continuous(name="Total Season Precipitation (mm)", breaks=c(0, 50, 100, 150, 200)) + 
+	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,105), breaks=seq(0, 100, 25), expand=c(0,0)) +
 	theme(legend.position=c(0.12,0.8), legend.text=element_text(size=14), legend.title=element_text(size=rel(1.5))) + labs(fill="Species") + theme(strip.text=element_text(size=rel(1.5), face="bold"))
 dev.off()
+
+save(precip.stack, temp.stack, aut.stack, comp.stack, file="Inputs/Scalars_Seasonal_Bootstrapped.Rdata")

@@ -57,7 +57,29 @@ data.x$Year    <- model.data$Year
 summary(data.x)
 # -------------------------
 
+# Summarizing some of the individual distribuitons within sites to satisfy a reviewer
+summary(model.data)
 
+spp.summary <- data.frame(Site.Trans=unique(substr(model.data$PlotID, 1,4)))
+spp.summary$Site <- substr(spp.summary$Site.Trans, 1, 3)
+spp.summary$Trans <- substr(spp.summary$Site.Trans, 4, 4)
+spp.summary
+
+
+sites <- unique(spp.summary$Site)
+trans <- unique(spp.summary$Trans)
+
+for(s in species){
+	spp.summary[,s] <- NA
+	data.temp <- model.data[model.data$Spp==s,]
+	for(i in unique(spp.summary$Site)){
+		for(t in unique(spp.summary$Trans)){
+			spp.summary[spp.summary$Site==i & spp.summary$Trans==t,s] <- length(unique(data.temp[data.temp$Site==i & data.temp$Trans==t & data.temp$Spp==s,"TreeID"]))
+		}
+	}
+}
+spp.summary
+write.csv(spp.summary[,2:ncol(spp.summary)], "Figures/Species_Distribution_Site.Trans.csv", row.names=F)
 
 # Number of trees
 length(unique(model.data[model.data$Spp=="ACRU","TreeID"]))
