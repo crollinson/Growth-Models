@@ -66,11 +66,11 @@ quru.run$Precip.X06.X08 <- rowMeans(quru.run[,c("Precip.X06", "Precip.X07", "Pre
 quru.run$Precip.X09.X11 <- rowMeans(quru.run[,c("Precip.X09", "Precip.X10", "Precip.X11")])
 
 
-Making vectors with the column names of the temp & precip months of interest
+# Making vectors with the column names of the temp & precip months of interest
 temp.col <- paste("Tavg", seasons, sep=".")
 precip.col <- paste("Precip", seasons, sep=".")
 
-Column numbers of temp & precip months of interest
+# Column numbers of temp & precip months of interest
 temp.col.ind <- which(names(quru.run) %in% c(temp.col))
 precip.col.ind <- which(names(quru.run) %in% c(precip.col))
 summary(quru.run[,temp.col.ind])
