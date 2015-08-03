@@ -2,8 +2,15 @@ Original/*
 RawInputs/*
 Seasonal/Inputs/*
 Annual/Inputs/*
+Annual/Figures/*
+Seasonal/Figures/*
 .history
 *.history
 Figures/*
 Post-Processing/Figures/*
+Post-Processing/Inputs/*
+2015_03/*
+
 *.Rdata
+
+*.csv
