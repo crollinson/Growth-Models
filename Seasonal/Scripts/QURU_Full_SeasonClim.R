@@ -29,7 +29,7 @@ summary(all.data)
 dim(all.data)
 
 ############
-Subsetting just QURU data
+# Subsetting just QURU data
 quru.all <- all.data[all.data$Spp=="QURU", ]
 summary(quru.all)
 dim(quru.all)
