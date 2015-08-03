@@ -35,7 +35,7 @@ summary(qupr.all)
 dim(qupr.all)
 
 # Subsetting only complete cases & a small range of years
-qupr.run <- qupr.all[complete.cases(qupr.all[,c("BAI", "Tavg", "Precip.PRISM")]) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
+qupr.run <- qupr.all[complete.cases(qupr.all[,c("BAI", "Tavg", "Precip.PRISM", "BA.m2ha.plot", "RelBA")]) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
 summary(qupr.run)
 dim(qupr.run)
 
@@ -116,14 +116,13 @@ overall.model <- function(
 
 # par <- results$best_par
 
-# need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=0.93, ab=0.0002, gmax=10000,  	# Autogenic
-          ca=9.6, cb=379, cc=2.74, cd=4.3, ce=175, cf=1513, cg=12.6,  # Competition
-          ta1=314.5, tb1=39.2,
-          pa1=1133, pb1=438, pc1=0.16,
+		  aa=1.0, ab=0.00085, gmax=10000,  	# Autogenic
+          ca=241.6, cb=0.26, cc=5, cd=2.70, ce=124.2, cf=37.7, cg=-641.6,  # Competition
+          ta1=302.4, tb1=18.6,
+          pa1=100, pb1=2539, pc1=0,
           # # ha=rep(0.5,3),  # Habitat
-          sd=262)
+          sd=405.9)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -169,7 +168,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian = F, slimit=1.92, max_iter=100000) #R2 = 0.61
 
 save(results,file=file.path("Outputs", paste(run.label, "_Results.Rdata", sep="")))
 

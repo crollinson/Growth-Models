@@ -35,7 +35,7 @@ summary(nysy.all)
 dim(nysy.all)
 
 # Subsetting only complete cases & a small range of years
-nysy.run <- nysy.all[complete.cases(nysy.all[,c("BAI", "Tavg", "Precip.PRISM")])) & nysy.all$Year>=1990 & nysy.all$Year<=2011,]
+nysy.run <- nysy.all[complete.cases(nysy.all[,c("BAI", "Tavg", "Precip.PRISM")]) & nysy.all$Year>=1990 & nysy.all$Year<=2011,]
 summary(nysy.run)
 dim(nysy.run)
 
@@ -118,12 +118,12 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=1, ab=0.002, gmax=4800,  	# Autogenic
-          ca=2000, cb=8.7, cc=0.06, cd=4.7, ce=843, cf=20, cg=-115,  # Competition
-          ta1=283.7, tb1=2.6,
-          pa1=100, pb1=9200, pc1=0.002,
+		  aa=0.995, ab=0.00066, gmax=8973,  	# Autogenic
+          ca=584.7, cb=6.6, cc=0.00, cd=0.003, ce=0, cf=29.4, cg=-859.3,  # Competition
+          ta1=290.9, tb1=7.84,
+          pa1=3388.6, pb1=10000, pc1=0.26,
           # # ha=rep(0.5,3),  # Habitat
-          sd=79)
+          sd=133.6)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -169,7 +169,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, nysy.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, nysy.run, par_lo, par_hi, dnorm, "BAI", hessian = F, slimit=1.92, max_iter=100000)# R2=0.71
 
 save(results,file=file.path("Outputs", paste(run.label, "_Results.Rdata", sep="")))
 

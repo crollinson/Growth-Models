@@ -118,12 +118,12 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=0.92, ab=0.013, gmax=10000,  	# Autogenic
-          ca=1957, cb=150, cc=5, cd=2.2, ce=38.7, cf=43, cg=-453,  # Competition
-          ta1=286, tb1=3.8,
-          pa1=4250, pb1=2412, pc1=0.92,
+		  aa=0.99, ab=0.0004, gmax=10000,  	# Autogenic
+          ca=1868, cb=8.9, cc=0.036, cd=4.68, ce=147, cf=17.5, cg=-994.5,  # Competition
+          ta1=284, tb1=4.9,
+          pa1=3532, pb1=3177, pc1=1,
           # # ha=rep(0.5,3),  # Habitat
-          sd=591)
+          sd=596)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -169,7 +169,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, quru.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, quru.run, par_lo, par_hi, dnorm, "BAI", hessian = F, slimit=1.92, max_iter=100000) #R2=0.64
 
 save(results,file=file.path("Outputs", paste(run.label, "_Results.Rdata", sep="")))
 

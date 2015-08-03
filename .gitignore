@@ -3,7 +3,9 @@ RawInputs/*
 Seasonal/Inputs/*
 Annual/Inputs/*
 Annual/Figures/*
+Annual/Outputs/*
 Seasonal/Figures/*
+Seasonal/Outputs/*
 .history
 *.history
 Figures/*
