@@ -16,3 +16,10 @@ Post-Processing/Inputs/*
 *.Rdata
 
 *.csv
+
+*.pdf
+
+*.log
+
+*.o6*
+*.pdf
