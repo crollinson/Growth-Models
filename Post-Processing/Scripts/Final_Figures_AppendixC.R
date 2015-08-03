@@ -13,7 +13,7 @@ library(grid)
 library(car)
 
 # dir.ms <- "~/Desktop/Personal/Penn State/Research/PhD Research/CARCA/Growth Manuscript/Ecology Final"
-dir.ms <- "~/Dropbox/CARCA/Growth Manuscript/Ecology Final"
+dir.ms <- "~/Dropbox/CARCA/Growth Manuscript/Ecology Submission 4"
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
@@ -29,7 +29,6 @@ theme.ecology <- 	theme(axis.line=element_line(color="black", size=0.5),
                           axis.title.y=element_text(size=rel(1))) +
                     theme(legend.text=element_text(size=rel(1)),
                     	  legend.key=element_blank())
-)
 # -------------------------
 
 
@@ -39,16 +38,15 @@ theme.ecology <- 	theme(axis.line=element_line(color="black", size=0.5),
 # Load already bootstrapped runs
 load("Inputs/Scalars_Annual_Bootstrapped.Rdata") # loads object "scalars.annual"
 # change Temp to Celcius
-scalars.annual[scalars.annual$Factor=="Temperature","X"] <- scalars.annual[scalars.annual$Factor=="Temperature","X"]-273.15 
 summary(scalars.annual)
 
 # Loading in the raw tree ring data
 model.data <- read.csv("Inputs/TargetSpecies_AllSites_Ann_1990-2011.csv")
 # model.data$BA.tree.cm2 <- model.data$BA.tree/100
 
-# Subsetting the data to make our lives easier
-species <- c("ACRU", "QURU", "QUPR", "BELE", "NYSY")
-model.data <- model.data[(model.data$Spp %in% species) & model.data$Year>=1990 & model.data$Year<=2011,]
+# # Subsetting the data to make our lives easier
+# species <- c("ACRU", "QURU", "QUPR", "BELE", "NYSY")
+# model.data <- model.data[(model.data$Spp %in% species) & model.data$Year>=1990 & model.data$Year<=2011,]
 
 # Translating model.data into something that more closely represents the scalars.annual to 
 #   make figures a lot easier
@@ -68,11 +66,14 @@ summary(data.x)
 # Species data distributions
 ##################################################################################
 
+# Making a table to draw from; 
+# Note: this is basically Table 3
 species.df <- data.frame(Species=unique(scalars.annual$Species), Color=species.colors)
-
 for(s in unique(species.df$Species)){
 	species.df[species.df$Species==s, "n"] <- length(data.x[data.x$Species==s & data.x$Factor=="Size", "X"])
+	species.df[species.df$Species==s, "n.tree"] <- length(unique(data.x[data.x$Species==s & data.x$Factor=="Size", "TreeID"]))
 }
+species.df
 
 for(i in 1:nrow(species.df)){
 	s = species.df[i,"Species"]
