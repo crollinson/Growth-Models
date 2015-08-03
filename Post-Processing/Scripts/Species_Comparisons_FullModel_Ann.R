@@ -43,34 +43,28 @@ large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.
 
 
 ####################################################################
+dat.acru <- read.csv("../Annual/Inputs/ACRU_AllSites_1990-2011.csv")
+dat.bele <- read.csv("../Annual/Inputs/BELE_AllSites_1990-2011.csv")
+dat.nysy <- read.csv("../Annual/Inputs/NYSY_AllSites_1990-2011.csv")
+dat.qupr <- read.csv("../Annual/Inputs/QUPR_AllSites_1990-2011.csv")
+dat.quru <- read.csv("../Annual/Inputs/QURU_AllSites_1990-2011.csv")
 
-# # model.data <- read.csv("Inputs/TargetSpecies_AllSites_Ann_1990-2011.csv")
-# summary(model.data)
-# length(unique(model.data$TreeID))
+model.data <- rbind(dat.acru, dat.bele, dat.nysy, dat.qupr, dat.quru)
 
-# months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
+# model.data <- read.csv("Inputs/TargetSpecies_AllSites_Ann_1990-2011.csv")
+summary(model.data)
+length(unique(model.data$TreeID))
 
-# months.use <- c(months[1:12]) # current March through October
-# length(months.use)
+months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
 
-# # Making vectors with the column names of the temp & precip months of interest
-# temp.col <- paste("Tavg", months.use, sep=".")
-# precip.col <- paste("Precip", months.use, sep=".")
+months.use <- c(months[1:12]) # current March through October
+length(months.use)
 
-# # Column numbers of temp & precip months of interest
-# temp.col.ind <- which(names(model.data) %in% c(temp.col))
-# precip.col.ind <- which(names(model.data) %in% c(precip.col))
-# summary(model.data[model.data,precip.col.ind])
-# length(precip.col.ind)
+# renaming the year met columns used to be consistent with the rest of the script
+model.data$ppt.yr <- model.data$Precip.PRISM.sum
+model.data$temp.yr <- model.data$Tavg
 
-# # Making Temperature in Kelvin
-# model.data[,substr(names(model.data),1,4)=="Tavg"] <- model.data[,substr(names(model.data),1,4)=="Tavg"]
-
-# # Creating columns to summarize the year
-# model.data$ppt.yr <- rowSums(model.data[,precip.col])
-# model.data$temp.yr <- rowMeans(model.data[,temp.col])
-
-# summary(model.data)
+summary(model.data)
 
 
 # # # Plotting climate space of data
@@ -89,7 +83,7 @@ large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.
 	# geom_tile() + scale_x_continuous(name="Annual Precip (mm)") + scale_y_continuous(name="Annual Mean Min Temp (C)") + scale_fill_gradientn(colours=bpy.colors(500), "Frequency") + large.axes + theme(legend.position=c(0.97,0.85), legend.text=element_text(size=14), legend.title=element_text(size=14)) + guides(fill=guide_colorbar(barwidth=2, barheight=5))
 # # dev.off()
 
-####################################################################
+###################################################################
 
 # ####################################################################
 # # Making a csv with parameter estimates
@@ -240,7 +234,7 @@ ggplot(data=aut.stack) + large.axes +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
 	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
-	theme(legend.position=c(0.85,0.75), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	theme(legend.position=c(0.85,0.25), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
 	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.2,0.1), "lines")) +
 	 labs(fill="Species")
 # dev.off()
@@ -262,7 +256,7 @@ ggplot(data=aut.stack) + large.axes +
 ##################################################################################
 # Temperature; BootStrapped
 ##################################################################################
-x.temp <- seq(min(model.data$Tavg), max(model.data$Tavg), length=250)+273.15
+x.temp <- seq(min(model.data$Tavg), max(model.data$Tavg), length=250)
 summary(x.temp)
 
 ##########################
@@ -275,7 +269,7 @@ names(temp.response) <- "x.temp"
 temp.response[,1] <- x.temp
 
 for(s in unique(param.distrib$Species)){
-	x.temp.spp <- seq(min(model.data[model.data$Spp==s, "Tavg"]), max(model.data[model.data$Spp==s, "Tavg"]), length=250)+273
+	x.temp.spp <- seq(min(model.data[model.data$Spp==s, "Tavg"]), max(model.data[model.data$Spp==s, "Tavg"]), length=250)
 
 	temp.response <- temp.ann(s, x.temp.spp, temp.response, param.est, param.distrib, n=250)	
 }
@@ -305,7 +299,7 @@ temp.stack$CI.low <- temp.stack2[,1]
 temp.stack$CI.hi <- temp.stack3[,1]
 temp.stack$Min <- temp.stack4[,1]
 temp.stack$Max <- temp.stack5[,1]
-
+summary(temp.stack)
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
@@ -316,7 +310,7 @@ ggplot(data=temp.stack) + large.axes +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_x_continuous(name=expression(bold(paste("Mean Annual Temperature ("^"o","C)")))) + 
 	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100)) +
-	theme(legend.position=c(0.8,0.4), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
+	theme(legend.position=c(0.8,0.2), legend.text=element_text(size=14), legend.title=element_text(size=16)) + 
 	 theme(axis.text.x=element_text(angle=0, color="black", size=rel(2.25)), axis.text.y=element_text(color="black", size=rel(2.25)),  axis.title.y=element_text(face="bold", size=rel(2), vjust=0.5), axis.title.x=element_text(face="bold", size=rel(2), vjust=0), plot.margin=unit(c(0.1,0.1,0.5,0.1), "lines")) +
 	labs(fill="Species")
 # dev.off()
@@ -394,7 +388,7 @@ ggplot(data=precip.stack) + large.axes +
 ##################################################################################
 x.relba <- seq(0,1, length.out=250)
 summary(x.relba)
-plot.BA <- mean(model.data$BA.m2ha.plot.live)
+plot.BA <- mean(model.data$BA.m2ha.plot.live, na.r=T)
 
 ##########################
 # Some Initial Data Frames
@@ -409,8 +403,8 @@ names(comp.response) <- "x.relba"
 comp.response[,1] <- x.relba
 
 for(s in unique(param.distrib$Species)){
-	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"]), max(model.data[model.data$Spp==s, "RelBA"]), length=250)
-	plot.ba <- mean(model.data[model.data$Spp==s, "BA.m2ha"])
+	x.relba <- seq(min(model.data[model.data$Spp==s, "RelBA"],na.rm=T), max(model.data[model.data$Spp==s, "RelBA"], na.rm=T), length=250)
+	plot.ba <- mean(model.data[model.data$Spp==s, "BA.m2ha.plot.live"], na.rm=T)
 	comp.response <- comp.predict(s, x.relba, plot.ba, comp.response, param.est, param.distrib, n=250)
 	}
 summary(comp.response)

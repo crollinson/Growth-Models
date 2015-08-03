@@ -14,7 +14,8 @@ source("Scripts/GrowthModel_Functions.R")
 library(ggplot2)
 library(grid)
 
-dir.ms <- "~/Desktop/Personal/Penn State/Research/PhD Research/CARCA/Growth Manuscript/Ecology Final"
+# dir.ms <- "~/Desktop/Personal/Penn State/Research/PhD Research/CARCA/Growth Manuscript/Ecology Final"
+dir.ms <- "~/Dropbox/CARCA/Growth Manuscript/Ecology Submission 4"
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 
@@ -29,8 +30,8 @@ theme.ecology <- 	theme(axis.line=element_line(color="black", size=0.5),
                           axis.title.x=element_text(size=rel(1)),  
                           axis.title.y=element_text(size=rel(1))) +
                     theme(legend.text=element_text(size=rel(1)),
-                    	  legend.key=element_blank()) +
-)
+                    	  legend.key=element_blank())
+
 
 ####################################################################
 # Annual Scalars (Figure 1)
