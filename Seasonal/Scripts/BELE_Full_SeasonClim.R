@@ -35,7 +35,7 @@ summary(bele.all)
 dim(bele.all)
 
 # Subsetting only complete cases & a small range of years
-bele.run <- bele.all[complete.cases(bele.all[,c("BAI", "TPI", "Precip.X01.prev")]) & bele.all$Year>=1990 & bele.all$Year<=2011,]
+bele.run <- bele.all[complete.cases(bele.all[,c("BAI", "TPI", "Precip.X01.prev", "RelBA")]) & bele.all$Year>=1990 & bele.all$Year<=2011,]
 summary(bele.run)
 dim(bele.run)
 
@@ -160,15 +160,15 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=0.8705, ab=806.17, gmax=10000,  	# Autogenic
-          ca=2000, cb=961.71, cc=3.37, cd=2.95, ce=85.58, cf=994.3, cg=-56.53,  # Competition
-          ta1=c(271.3,	262.0,	276.39,	305.53,	301.6,	278.0), 
-          tb1=c(312.0,	12.3,	492.0,	432.12,	7.64,	315.04),
-          pa1=c(312.02,	5.0,		104.75,	30.23,	0.13,	58.56), 
-          pb1=c(177.53,	1706.55,41.40,	1464.7,	1458.26,81.186), 
+		  aa=0.998, ab=0.011, gmax=9988.6,  	# Autogenic
+          ca=255.5, cb=16.3, cc=5, cd=3.08, ce=155.3, cf=400.4, cg=-206.8,  # Competition
+          ta1=c(285.96,	283.3,  260.02,	325.0,	295.5,	295.4), 
+          tb1=c(  6.43,	  3.30,	 63.84,	 71.6,	375.9,	  9.64),
+          pa1=c(472.5,	191.1,	490.6,	497.4,	325.7,	120.9), 
+          pb1=c(1317.9, 855.9, 1498.1, 1866.3,	223.5,  1777.0), 
           pc1=0.281, 
           # # ha=rep(0.5,3),  # Habitat
-          sd=89.84)
+          sd=310.5)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -214,7 +214,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, bele.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, bele.run, par_lo, par_hi, dnorm, "BAI", hessian=F, slimit=1.92, max_iter=100000) #R2=0.54
 
 save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 

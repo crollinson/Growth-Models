@@ -160,15 +160,15 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=1, ab=0.00383, gmax=5500,  	# Autogenic
-          ca=1.562, cb=871.4, cc=2.04, cd=0.617, ce=217.5, cf=139.6, cg=680.374,  # Competition
-          ta1=c(296.96,	283.84,	279.82,	291.35,	325,		291.66), 
-          tb1=c(31.55,	3.42,	10.4,	17.82,	47.40,	11.58),
-          pa1=c(500,	1.16,	466.64,	121.31,	113.99,	335.36), 
-          pb1=c(570.22,	1302.86,655.72,	1749.49,55.56,	731.587), 
-          pc1=0.18368, 
+		  aa=0.995, ab=0.00081, gmax=9429,  	# Autogenic
+          ca=0.861, cb=2.45, cc=5, cd=0.003, ce=0, cf=29.3, cg=-836.3,  # Competition
+          ta1=c(284.6,	288.8,	257.2,	285.6,	313.9,	295.2), 
+          tb1=c(194.3,	 10.8,	340.8,	  8.6,	 31.5,	 19.9),
+          pa1=c(361.7,	500.0,	380.8,	425.2,	  5.2,	496.3), 
+          pb1=c(1952.6,	1941.0,  2000,	1011.6, 675.5,	1994.8), 
+          pc1=0.06, 
           # # ha=rep(0.5,3),  # Habitat
-          sd=86.108)
+          sd=130.1)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -214,7 +214,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, nysy.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, nysy.run, par_lo, par_hi, dnorm, "BAI", hessian=F, slimit=1.92, max_iter=100000) # R2=0.71
 
 save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 

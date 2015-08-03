@@ -35,7 +35,7 @@ summary(acru.all)
 dim(acru.all)
 
 # Subsetting only complete cases & a small range of years
-acru.run <- acru.all[complete.cases(acru.all[,c("BAI", "TPI", "Precip.X01.prev")]) & acru.all$Year>=1990 & acru.all$Year<=2011,]
+acru.run <- acru.all[complete.cases(acru.all[,c("BAI", "TPI", "Precip.X01.prev", "RelBA")]) & acru.all$Year>=1990 & acru.all$Year<=2011,]
 summary(acru.run)
 dim(acru.run)
 
@@ -160,15 +160,15 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=1, ab=0.00554, gmax=10000,  	# Autogenic
-          ca=2000, cb=14.6, cc=4.98, cd=0.0122, ce=0, cf=1000, cg=-165.27,  # Competition
-          ta1=c(278.38,	264.81,	284.25,	314.92,	250.36,	250), 
-          tb1=c(266.04,	29.30,	489.61,	451.51,	449.48,	21.43),
-          pa1=c(27.23,	440.96,	492.98,	215.03,	19.55,	0.057), 
-          pb1=c(224.39,	1956.4,	638.42,	302.86,	725.79,	115.37), 
-          pc1=0.409, 
+		  aa=1, ab=0.0014, gmax=9992,  	# Autogenic
+          ca=108.7, cb=0.94, cc=0.75, cd=0.008, ce=0, cf=882.2, cg=-172.5,  # Competition
+          ta1=c(290.8,	269.4,	273.0,	281.9,	274.5,	292.3), 
+          tb1=c(39.1,	154.0,	39.3,	  5.1,	115.4,	 11.4),
+          pa1=c(0.001,	392.0,	0.00,	0.00,	170.1,	0.28), 
+          pb1=c(259.5,	1990.1,	113.7,	256.8,	106.5,	1458.3), 
+          pc1=0.97, 
           # # ha=rep(0.5,3),  # Habitat
-          sd=126.61)
+          sd=408.9)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -214,7 +214,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, acru.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, acru.run, par_lo, par_hi, dnorm, "BAI", hessian=F, slimit=1.92, max_iter=10000) #R2=0.46
 
 save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 

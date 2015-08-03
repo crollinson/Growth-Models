@@ -35,7 +35,7 @@ summary(quru.all)
 dim(quru.all)
 
 # Subsetting only complete cases & a small range of years
-quru.run <- quru.all[complete.cases(quru.all[,c("BAI", "TPI", "Precip.X01.prev")]) & quru.all$Year>=1990 & quru.all$Year<=2011,]
+quru.run <- quru.all[complete.cases(quru.all[,c("BAI", "TPI", "Precip.X01.prev", "RelBA")]) & quru.all$Year>=1990 & quru.all$Year<=2011,]
 summary(quru.run)
 dim(quru.run)
 
@@ -160,15 +160,15 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=0.91, ab=0.006, gmax=10000,  	# Autogenic
-          ca=423.4, cb=144.5, cc=5, cd=3.2, ce=171.3, cf=113.8, cg=-751.35,  # Competition
-          ta1=c(323,	263.2,	254.5,	311.16,	293.1,	293.1), 
-          tb1=c(494.7,	484.9,	116.8,	56.73,	3.68,	8.9),
-          pa1=c(236.15,	343,	20.82,	500,	248,	172.1658), 
-          pb1=c(710.1,	683.8,	643.2,	1359,	192.3,	2000), 
-          pc1=0.776, 
+		  aa=0.99, ab=0.0004, gmax=10000,  	# Autogenic
+          ca=844.7, cb=8.54, cc=0.056, cd=1.43, ce=12.8, cf=17.54, cg=-993.5,  # Competition
+          ta1=c(318.6,	324.4,	271.6,	291.2,	294.5,	310.0), 
+          tb1=c(394.5,	458.7,	  7.25,	183.0,	  5.76,	498.3),
+          pa1=c(451.3,	399.1,	 97.1,	132.4,	208.4,	368.6), 
+          pb1=c(945.3,	581.6,	1932.6, 1481.1,	273.2,	1947.2), 
+          pc1=0.94, 
           # # ha=rep(0.5,3),  # Habitat
-          sd=558.677)
+          sd=573.2)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -214,7 +214,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, quru.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, quru.run, par_lo, par_hi, dnorm, "BAI", hessian=F, slimit=1.92, max_iter=100000)
 
 save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 

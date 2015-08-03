@@ -35,7 +35,7 @@ summary(qupr.all)
 dim(qupr.all)
 
 # Subsetting only complete cases & a small range of years
-qupr.run <- qupr.all[complete.cases(qupr.all[,c("BAI", "TPI", "Precip.X01.prev")]) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
+qupr.run <- qupr.all[complete.cases(qupr.all[,c("BAI", "TPI", "Precip.X01.prev", "RelBA", "BA.m2ha.plot")]) & qupr.all$Year>=1990 & qupr.all$Year<=2011,]
 summary(qupr.run)
 dim(qupr.run)
 
@@ -51,7 +51,7 @@ months.use <- c(months.prev, months.curr)
 seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
 seasons
 
-# qupr.run$Tavg.pX06.pX08 <- rowMeans(qupr.run[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
+qupr.run$Tavg.pX06.pX08 <- rowMeans(qupr.run[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
 qupr.run$Tavg.pX09.pX11 <- rowMeans(qupr.run[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
 qupr.run$Tavg.pX12.X02 <- rowMeans(qupr.run[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
 qupr.run$Tavg.X03.X05 <- rowMeans(qupr.run[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
@@ -73,6 +73,7 @@ precip.col <- paste("Precip", seasons, sep=".")
 # Column numbers of temp & precip months of interest
 temp.col.ind <- which(names(qupr.run) %in% c(temp.col))
 precip.col.ind <- which(names(qupr.run) %in% c(precip.col))
+
 summary(qupr.run[,temp.col.ind])
 summary(qupr.run[,precip.col.ind])
 length(temp.col.ind)
@@ -160,15 +161,15 @@ overall.model <- function(
 
 # need a list that gives initial values for all of the "parameters"
 par<-list(
-		  aa=0.9, ab=0.0003, gmax=9500,  	# Autogenic
-          ca=987.3, cb=64.9, cc=1.2, cd=1.05, ce=625.94, cf=902.03, cg=-292.7,  # Competition
-          ta1=c(304.7,	294.1,	321.12,	324.86,	267.88,	297.18), 
-          tb1=c(216.63,	16.84,	291.93,	464.16,	315.28,	422.35),
-          pa1=c(260.73,	178.76,	72.62,	0.00,	2.08,	393.24), 
-          pb1=c(460.36,	210.83,	760.55,	191.68,	199.6,	1648.7), 
-          pc1=0.0001, 
+		  aa=1.0, ab=0.00065, gmax=10000,  	# Autogenic
+          ca=0.48, cb=2.22, cc=5.0, cd=0.018, ce=0.00, cf=32.5, cg=-432.1,  # Competition
+          ta1=c(279.9,	298.7,	299.9,	253.0,	315.1,	295.9), 
+          tb1=c(76.74,	304.5,	45.9,	475.9,	52.1,	13.8),
+          pa1=c(260.76,	438.3,	0.005,	428.4,	496.6,	1.02), 
+          pb1=c(524.5,	2000,	322.8,	2000,	451.9,	816.8), 
+          pc1=1.0, 
           # # ha=rep(0.5,3),  # Habitat
-          sd=256)
+          sd=398.8)
 
 # also need a list that identifies the independent variables
 var <- list(SIZE = "BA.tree.cm2",  # Autogenic
@@ -214,7 +215,7 @@ var$log<-TRUE
 
 ##  now call the annealing algorithm, choosing which model to use
 #  "data" should be whatever the name of your dataframe is...
-results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian = T, slimit=1.92, max_iter=100000)
+results <- anneal(overall.model, par, var, qupr.run, par_lo, par_hi, dnorm, "BAI", hessian=F, slimit=1.92, max_iter=100000) #R2=0.62
 
 save(results,file=file.path("Outputs", paste( run.label, "_Results.Rdata", sep="")))
 
