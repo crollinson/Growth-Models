@@ -34,39 +34,58 @@ q.blank <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.maj
 large.axes <- theme(axis.line=element_line(color="black", size=0.5), panel.grid.major=element_blank(), panel.grid.minor= element_blank(), panel.border= element_blank(), panel.background= element_blank(), axis.text.x=element_text(angle=0, color="black", size=18), axis.text.y=element_text(color="black", size=18), axis.title.x=element_text(face="bold", size=20, vjust=-0.5),  axis.title.y=element_text(face="bold", size=20, vjust=0.5), plot.margin=unit(c(0.1,0.1,0.5,0.1), "lines"))
 
 ####################################################################
-model.data <- read.csv("Inputs/TargetSpecies_AllSites_1990-2011.csv")
+dat.acru <- read.csv("../Seasonal/Inputs/ACRU_AllSites_1990-2011.csv")
+dat.bele <- read.csv("../Seasonal/Inputs/BELE_AllSites_1990-2011.csv")
+dat.nysy <- read.csv("../Seasonal/Inputs/NYSY_AllSites_1990-2011.csv")
+dat.qupr <- read.csv("../Seasonal/Inputs/QUPR_AllSites_1990-2011.csv")
+dat.quru <- read.csv("../Seasonal/Inputs/QURU_AllSites_1990-2011.csv")
+
+model.data <- rbind(dat.acru, dat.bele, dat.nysy, dat.qupr, dat.quru)
+
+# model.data <- read.csv("Inputs/TargetSpecies_AllSites_Seasonal_1990-2011.csv")
+
+
+# model.data <- read.csv("Inputs/TargetSpecies_AllSites_Seasonal_1990-2011.csv")
 # model.data[,substr(names(model.data),1,4)=="Tavg"] <- model.data[,substr(names(model.data),1,4)=="Tavg"]+273.15
 # model.data <- model.data[complete.cases(model.data) & model.data$Year>=1990 & model.data$Year<=2011,]
 # model.data$BA.tree.cm2 <- model.data$BA.tree/100
 summary(model.data)
 length(unique(model.data$TreeID))
 
+# Making vectors with the column names of the temp & precip months of interest
+temp.col <- paste("Tavg", seasons, sep=".")
+precip.col <- paste("Precip", seasons, sep=".")
 
-#############
-# Vector with names of Months of the year
-months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
+# Column numbers of temp & precip months of interest
+temp.col.ind <- which(names(model.data) %in% c(temp.col))
+precip.col.ind <- which(names(model.data) %in% c(precip.col))
 
-# Selecting which previous and current year months to include in model
-months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
-months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
-months.use <- c(months.prev, months.curr)
 
-seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
-seasons
+### ###########
+# # Vector with names of Months of the year
+# months <- c("X01", "X02", "X03", "X04", "X05", "X06", "X07", "X08", "X09", "X10", "X11", "X12")
 
-model.data$Tavg.pX06.pX08 <- rowMeans(model.data[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
-model.data$Tavg.pX09.pX11 <- rowMeans(model.data[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
-model.data$Tavg.pX12.X02 <- rowMeans(model.data[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
-model.data$Tavg.X03.X05 <- rowMeans(model.data[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
-model.data$Tavg.X06.X08 <- rowMeans(model.data[,c("Tavg.X06", "Tavg.X07", "Tavg.X08")])
-model.data$Tavg.X09.X11 <- rowMeans(model.data[,c("Tavg.X09", "Tavg.X10", "Tavg.X11")])
+# # Selecting which previous and current year months to include in model
+# months.prev <- paste(months[6:12], "prev", sep=".") # Previous June through December
+# months.curr <- paste(months[1:10], sep=".") # Current Junuary through October
+# months.use <- c(months.prev, months.curr)
 
-model.data$Precip.pX06.pX08 <- rowMeans(model.data[,c("Precip.X06.prev", "Precip.X07.prev", "Precip.X08.prev")])
-model.data$Precip.pX09.pX11 <- rowMeans(model.data[,c("Precip.X09.prev", "Precip.X10.prev", "Precip.X11.prev")])
-model.data$Precip.pX12.X02 <- rowMeans(model.data[,c("Precip.X12.prev", "Precip.X01", "Precip.X02")])
-model.data$Precip.X03.X05 <- rowMeans(model.data[,c("Precip.X03", "Precip.X04", "Precip.X05")])
-model.data$Precip.X06.X08 <- rowMeans(model.data[,c("Precip.X06", "Precip.X07", "Precip.X08")])
-model.data$Precip.X09.X11 <- rowMeans(model.data[,c("Precip.X09", "Precip.X10", "Precip.X11")])
+# seasons <- c("pX06.pX08", "pX09.pX11", "pX12.X02", "X03.X05", "X06.X08", "X09.X11")
+# seasons
+
+# model.data$Tavg.pX06.pX08 <- rowMeans(model.data[,c("Tavg.X06.prev", "Tavg.X07.prev", "Tavg.X08.prev")])
+# model.data$Tavg.pX09.pX11 <- rowMeans(model.data[,c("Tavg.X09.prev", "Tavg.X10.prev", "Tavg.X11.prev")])
+# model.data$Tavg.pX12.X02 <- rowMeans(model.data[,c("Tavg.X12.prev", "Tavg.X01", "Tavg.X02")])
+# model.data$Tavg.X03.X05 <- rowMeans(model.data[,c("Tavg.X03", "Tavg.X04", "Tavg.X05")])
+# model.data$Tavg.X06.X08 <- rowMeans(model.data[,c("Tavg.X06", "Tavg.X07", "Tavg.X08")])
+# model.data$Tavg.X09.X11 <- rowMeans(model.data[,c("Tavg.X09", "Tavg.X10", "Tavg.X11")])
+
+# model.data$Precip.pX06.pX08 <- rowMeans(model.data[,c("Precip.X06.prev", "Precip.X07.prev", "Precip.X08.prev")])
+# model.data$Precip.pX09.pX11 <- rowMeans(model.data[,c("Precip.X09.prev", "Precip.X10.prev", "Precip.X11.prev")])
+# model.data$Precip.pX12.X02 <- rowMeans(model.data[,c("Precip.X12.prev", "Precip.X01", "Precip.X02")])
+# model.data$Precip.X03.X05 <- rowMeans(model.data[,c("Precip.X03", "Precip.X04", "Precip.X05")])
+# model.data$Precip.X06.X08 <- rowMeans(model.data[,c("Precip.X06", "Precip.X07", "Precip.X08")])
+# model.data$Precip.X09.X11 <- rowMeans(model.data[,c("Precip.X09", "Precip.X10", "Precip.X11")])
 
 
 # Making vectors with the column names of the temp & precip months of interest
@@ -76,20 +95,20 @@ precip.col <- paste("Precip", seasons, sep=".")
 # Column numbers of temp & precip months of interest
 temp.col.ind <- which(names(model.data) %in% c(temp.col))
 precip.col.ind <- which(names(model.data) %in% c(precip.col))
-summary(model.data[ ,temp.col.ind])
-summary(model.data[ ,precip.col.ind])
-length(temp.col.ind)
+# summary(model.data[ ,temp.col.ind])
+# summary(model.data[ ,precip.col.ind])
+# length(temp.col.ind)
 
-min(model.data[ ,temp.col.ind])-273.15; max(model.data[ ,temp.col.ind])-273.15
-min(model.data[ ,precip.col.ind]); max(model.data[ ,precip.col.ind])
+# min(model.data[ ,temp.col.ind])-273.15; max(model.data[ ,temp.col.ind])-273.15
+# min(model.data[ ,precip.col.ind]); max(model.data[ ,precip.col.ind])
 
-####################################################################
+# ####################################################################
 
 
 
-####################################################################
-# Making a csv with parameter estimates
-####################################################################
+# ###################################################################
+# # Making a csv with parameter estimates
+# ###################################################################
 # load("../Seasonal/Outputs/ACRU_Full_Season_Results.Rdata")
 # acru.results <- results
 # load("../Seasonal/Outputs/BELE_Full_Season_Results.Rdata")
@@ -238,7 +257,7 @@ ggplot(data=aut.stack) + large.axes +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	xlab(expression(bold(paste(Basal~Area~~(cm^2))))) +
 	scale_y_continuous(name="Percent Max Growth Rate", limits=c(0,1), breaks=seq(0, 1, 0.25)) +
-	theme(legend.position=c(0.85,0.80), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
+	theme(legend.position=c(0.85,0.30), legend.text=element_text(size=14), legend.title=element_text(size=16)) + labs(fill="Species")
 dev.off()
 
 ##################################################################################
@@ -345,7 +364,7 @@ temp.temp <- data.frame(array(dim=c(nrow(x.temp),1)))
 # row.names(temp.temp) <- x.temp
 
 # # Data frame where the summary (mean & SD) of the runs will be placed
-# temp.response <- data.frame(array(dim=c(length(x.temp),1)))
+temp.response <- data.frame(array(dim=c(length(x.temp),1)))
 # names(temp.response) <- "x.temp"
 # temp.response[,1] <- x.temp
 # temp.response <- data.frame(array(dim=c(length(x.names),1)))
@@ -355,7 +374,7 @@ temp.temp <- data.frame(array(dim=c(nrow(x.temp),1)))
 # temp.response$Season <- as.factor(substr(row.names(temp.response),1,1))
 # summary(temp.response)
 
-
+temp.response <- data.frame()
 for(s in unique(param.distrib$Species)){
 	temp.response <- temp.seasonal(s, x.temp, temp.response, param.est, param.distrib, n)
 		}
@@ -483,7 +502,9 @@ precip.temp <- data.frame(array(dim=c(nrow(x.precip),1)))
 # precip.response$Season <- as.factor(substr(row.names(precip.response),1,1))
 # summary(precip.response)
 
+precip.response <- data.frame()
 for(s in unique(param.distrib$Species)){
+	FLOW <- mean(model.data[model.data$Spp==s, "flow"], na.rm=T)
 	precip.response <- precip.seasonal(s, x.precip, FLOW, precip.response, param.est, param.distrib, n)
 	}
 

@@ -12,8 +12,8 @@ library(ggplot2)
 library(grid)
 library(car)
 
-# dir.ms <- "~/Desktop/Personal/Penn State/Research/PhD Research/CARCA/Growth Manuscript/Ecology Final"
-dir.ms <- "~/Dropbox/CARCA/Growth Manuscript/Ecology Final"
+dir.ms <- "~/Desktop/Personal/Penn State/Research/PhD Research/CARCA/Growth Manuscript/Ecology Submission 4"
+# dir.ms <- "~/Dropbox/CARCA/Growth Manuscript/Ecology Submission 4"
 
 species.colors <- c("purple", "blue", "green3", "orange", "red")
 

@@ -47,7 +47,7 @@ aut.ann <- ggplot(data=scalars.annual[scalars.annual$Factor=="Size",]) +
 	scale_color_manual(values=species.colors) + scale_fill_manual(values=species.colors) +
 	scale_y_continuous(name="Growth Rate (% Max)", limits=c(0,100), breaks=seq(0, 100, 25)) +
 	scale_x_continuous(name=expression(paste(Basal~Area~~(cm^2)))) + 
-	theme(legend.position=c(0.8,0.5),
+	theme(legend.position=c(0.8,0.3),
 		  legend.key.height=unit(2, "lines")) +
 	theme(plot.margin=unit(c(1,0,1,0), "lines")) +
 	theme.ecology
@@ -98,6 +98,31 @@ print(temp.ann,   vp = viewport(layout.pos.row = 2, layout.pos.col = 1))
 print(precip.ann, vp = viewport(layout.pos.row = 2, layout.pos.col = 2))
 dev.off()
 
+# -----------------------
+# Stats for Manuscript:
+# -----------------------
+# % Growth at minimum temperature -- relativize to point of least limitation
+# Finding the max & min growth rates as well as the growth rate at the Max/min temp
+growth.rates <- data.frame(Species=unique(scalars.annual$Species))
+for(s in growth.rates$Species){
+	growth.rates[growth.rates$Species==s,"Temp.MaxR"] <- max(scalars.annual[scalars.annual$Species==s & scalars.annual$Factor=="Temperature","MLE"])
+	growth.rates[growth.rates$Species==s,"Max.Temp"] <- scalars.annual[scalars.annual$Species==s & scalars.annual$Factor=="Temperature" & scalars.annual$X==max(scalars.annual[scalars.annual$Factor=="Temperature", "X"]),"MLE"]
+	growth.rates[growth.rates$Species==s,"Temp.MinR"] <- min(scalars.annual[scalars.annual$Species==s & scalars.annual$Factor=="Temperature","MLE"])
+	growth.rates[growth.rates$Species==s,"Min.Temp"] <- scalars.annual[scalars.annual$Species==s & scalars.annual$Factor=="Temperature" & scalars.annual$X==min(scalars.annual[scalars.annual$Factor=="Temperature", "X"]),"MLE"]
+	growth.rates[growth.rates$Species==s,"Max.Precip"] <- scalars.annual[scalars.annual$Species==s & scalars.annual$Factor=="Precipitation" & scalars.annual$X==max(scalars.annual[scalars.annual$Factor=="Precipitation", "X"]),"MLE"]
+	growth.rates[growth.rates$Species==s,"Precip.MaxR"] <- max(scalars.annual[scalars.annual$Species==s & scalars.annual$Factor=="Precipitation","MLE"])
+	growth.rates[growth.rates$Species==s,"Precip.MinR"] <- min(scalars.annual[scalars.annual$Species==s & scalars.annual$Factor=="Precipitation","MLE"])
+}
+# Looking at the % reduction in growth at low temperatures GIVEN that for some species the highest rate is NOT 1
+growth.rates$Sens.Temp <- growth.rates$Min.Temp/growth.rates$Temp.MaxR
+growth.rates$Sens.Precip <- growth.rates$Max.Precip/growth.rates$Precip.MaxR
+growth.rates
+summary(growth.rates)
+
+# Looking at precip sensitivity ignoring QURU
+1-mean(growth.rates$Sens.Precip[1:4]); sd(growth.rates$Sens.Precip[1:4])
+
+# -----------------------
 ####################################################################
 # Seasonal Scalars (Figures 2, 3)
 # Data Processing Script: Species_Comparisons_FullModel_Seasonal.R
@@ -161,6 +186,34 @@ ggplot(data=temp.stack) + facet_wrap(~ Species) +
 pos="down")
 dev.off()
 
+# -----------------------
+# Stats for Manuscript:
+# -----------------------
+summary(temp.stack)
+
+# Running some stats for QURU, which had the greatest change with precip
+quru.mean <- temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Mean",]
+quru.min  <- temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Minimum",] 
+quru.max  <- temp.stack[temp.stack$Species=="QURU" & temp.stack$Precip=="Maximum",]
+
+# Increase with Max
+mean(quru.max$MLE-quru.mean$MLE); sd(quru.max$MLE-quru.mean$MLE)
+mean((quru.max$MLE-quru.mean$MLE)/quru.mean$MLE); sd((quru.max$MLE-quru.mean$MLE)/quru.mean$MLE)
+
+# Deacrease with Min
+mean(quru.mean$MLE-quru.min$MLE); sd(quru.mean$MLE-quru.min$MLE)
+mean((quru.mean $MLE-quru.min$MLE)/quru.mean$MLE); sd((quru.mean$MLE-quru.min$MLE)/quru.mean$MLE)
+
+# Comparing difference at Min & Max temperature
+t.min <- quru.mean[quru.mean$MLE==min(quru.mean$MLE), "x.temp"]
+t.max <- quru.mean[quru.mean$MLE==max(quru.mean$MLE), "x.temp"]
+t.min-273.15; t.max-273.15
+
+quru.max[quru.max$x.temp==t.min,c("MLE", "CI.low", "CI.hi")] - quru.min[quru.min$x.temp==t.min,c("MLE", "CI.low", "CI.hi")]
+quru.max[quru.max$x.temp==t.max,c("MLE", "CI.low", "CI.hi")] - quru.min[quru.min$x.temp==t.max,c("MLE", "CI.low", "CI.hi")]
+
+# -----------------------
+
 
 # Temp-Size-Competition Interaction
 load(file="Inputs/Interactions_Bootstrapped_Temp_Size_Comp.Rdata")
@@ -178,3 +231,27 @@ ggplot(data=temp.comp.stack) + facet_wrap(~ Scenario , nrow=1) +
 	      legend.key.height=unit(1.25, "line")) +
 	labs(fill="Species", color="Species", linetype="Species")
 dev.off()
+
+# -----------------------
+# Stats for Manuscript:
+# -----------------------
+summary(temp.comp.stack)
+
+# Comparing mean change in growth for a species across scenarios
+bele.1 <- temp.comp.stack[temp.comp.stack$Species=="BELE" & temp.comp.stack$Scenario=="Scenario 1", ]
+bele.4 <- temp.comp.stack[temp.comp.stack$Species=="BELE" & temp.comp.stack$Scenario=="Scenario 4", ]
+quru.1 <- temp.comp.stack[temp.comp.stack$Species=="QURU" & temp.comp.stack$Scenario=="Scenario 1", ]
+quru.4 <- temp.comp.stack[temp.comp.stack$Species=="QURU" & temp.comp.stack$Scenario=="Scenario 4", ]
+summary(bele.1)
+summary(bele.4)
+
+mean(bele.4$MLE-bele.1$MLE); sd(bele.4$MLE-bele.1$MLE) 
+mean(quru.4$MLE-quru.1$MLE); sd(quru.4$MLE-quru.1$MLE) 
+
+# Comparing growth rates under given temperature within a single scenario
+tmin <- min(temp.stack$x.temp)
+
+temp.comp.stack[(temp.comp.stack$Species=="QURU" | temp.comp.stack$Species=="QUPR") & temp.comp.stack$x.temp==tmin & temp.comp.stack$Scenario=="Scenario 3", ]
+temp.comp.stack[!(temp.comp.stack$Species=="QURU" | temp.comp.stack$Species=="QUPR") & temp.comp.stack$x.temp==tmin & temp.comp.stack$Scenario=="Scenario 3", ]
+mean(temp.comp.stack[temp.comp.stack$Species=="QURU" | temp.comp.stack$Species=="QUPR" & temp.comp.stack$x.temp==tmin & temp.comp.stack$Scenario=="Scenario 3", "MLE"])/mean(temp.comp.stack[!(temp.comp.stack$Species=="QURU" | temp.comp.stack$Species=="QUPR")  & temp.comp.stack$x.temp==tmin & temp.comp.stack$Scenario=="Scenario 3", "MLE"])
+# -----------------------

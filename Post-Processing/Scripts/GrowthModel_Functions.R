@@ -276,15 +276,15 @@ precip.seasonal <- function(species, PRECIP, FLOW, out, param.est, param.distrib
 	#---------------------------------------------
 		for(i in 1:n){
 			pa1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[1], 3:202], size=1, replace=T))
-			precip.temp[,i] <- precip.effect(x.precip, x.flow, pa1=pa1.samp, pb1=pb1.MLE, pc1=pc1.MLE)
+			precip.temp[,i] <- precip.effect(x.precip, FLOW, pa1=pa1.samp, pb1=pb1.MLE, pc1=pc1.MLE)
 			}
 		for(i in (1*n+1):(2*n)){
 			pb1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[2], 3:202], size=1, replace=T))
-			precip.temp[,i] <- precip.effect(x.precip, x.flow, pa1=pa1.MLE, pb1=pb1.samp, pc1=pc1.MLE)
+			precip.temp[,i] <- precip.effect(x.precip, FLOW, pa1=pa1.MLE, pb1=pb1.samp, pc1=pc1.MLE)
 			}
 		for(i in (2*n+1):(3*n)){
 			pc1.samp <- as.numeric(sample(param.distrib[param.distrib$Species==s & param.distrib$Parameter==p.list1[3], 3:202], size=1, replace=T))
-			precip.temp[,i] <- precip.effect(x.precip, x.flow, pa1=pa1.MLE, pb1=pb1.MLE, pc1=pc1.samp)
+			precip.temp[,i] <- precip.effect(x.precip, FLOW, pa1=pa1.MLE, pb1=pb1.MLE, pc1=pc1.samp)
 			}
 	#---------------------------------------------
 
@@ -293,7 +293,7 @@ precip.seasonal <- function(species, PRECIP, FLOW, out, param.est, param.distrib
 		
 		# seq(min(model.data[model.data$Spp==s,precip.col.ind[j]]), max(model.data[model.data$Spp==s,precip.col.ind[j]]), length=250)
 
-		out[start:(start+length(x.precip)-1),paste(s, "MLE", sep=".")] <- as.numeric(precip.effect(PRECIP=x.precip, FLOW=x.flow, pa1=pa1.MLE, pb1=pb1.MLE, pc1=pc1.MLE))
+		out[start:(start+length(x.precip)-1),paste(s, "MLE", sep=".")] <- as.numeric(precip.effect(PRECIP=x.precip, FLOW=FLOW, pa1=pa1.MLE, pb1=pb1.MLE, pc1=pc1.MLE))
 
 		ci <- apply(precip.temp, 1, FUN=quantile, c(0.025, 0.975), na.rm=T)
 		range  <- apply(precip.temp, 1, FUN=range, na.rm=T)
