@@ -129,6 +129,7 @@ for(i in 1:nrow(species.df)){
 		  axis.text.y=element_blank())
 
 png(file.path(dir.ms, paste0("Figure_C",i,"_",s, "_Scalars_Ann.png")), width=6, height=6, units="in", pointsize=6, res=600)
+grid.newpage()
 pushViewport(viewport(layout=grid.layout(2,2)))
 print(plot.size,    vp = viewport(layout.pos.row = 1, layout.pos.col = 1))
 print(plot.comp,   vp = viewport(layout.pos.row = 1, layout.pos.col = 2))
